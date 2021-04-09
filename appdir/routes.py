@@ -64,7 +64,7 @@ def admin_page():
 @blueprint.route('/admin/view')
 @roles_required('Admin')  # Use of @roles_required decorator
 def admin_view_page():
-    con = sql.connect('zlagoda.db')
+    con = sql.connect('dbs/zlagoda.db')
     con.row_factory = sql.Row
 
     cur = con.cursor()

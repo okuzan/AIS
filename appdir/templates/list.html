@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+   <body>
+
+      <table border = 1>
+         <thead>
+            <td>UPC</td>
+            <td>Check number</td>
+            <td>Product_number</td>
+            <td>Selling_price</td>
+         </thead>
+
+         {% for row in rows %}
+            <tr>
+                <td>{{row["upc"]}}</td>
+                <td>{{row["check_number"]}}</td>
+                <td>{{row['id_employee']}}</td>
+                <td>{{ row["selling_price"]}}</td>
+            </tr>
+         {% endfor %}
+      </table>
+
+      <a href = "/">Go back to home page</a>
+   </body>
+</html>

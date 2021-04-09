@@ -14,7 +14,6 @@ def home_page():
             {% extends "flask_user_layout.html" %}
             {% block content %}
                 <h2>{%trans%}Home page{%endtrans%}</h2>
-                <p><a href={{ url_for('user.register') }}>{%trans%}Register{%endtrans%}</a></p>
                 <p><a href={{ url_for('user.login') }}>{%trans%}Sign in{%endtrans%}</a></p>
                 <p><a href={{ url_for('blueprint.home_page') }}>{%trans%}Home Page{%endtrans%}</a> (accessible to anyone)</p>
                 <p><a href={{ url_for('blueprint.member_page') }}>{%trans%}Member Page{%endtrans%}</a> (login_required: member@example.com / Password1)</p>
@@ -32,7 +31,6 @@ def member_page():
             {% extends "flask_user_layout.html" %}
             {% block content %}
                 <h2>{%trans%}Members page{%endtrans%}</h2>
-                <p><a href={{ url_for('user.register') }}>{%trans%}Register{%endtrans%}</a></p>
                 <p><a href={{ url_for('user.login') }}>{%trans%}Sign in{%endtrans%}</a></p>
                 <p><a href={{ url_for('blueprint.home_page') }}>{%trans%}Home Page{%endtrans%}</a> (accessible to anyone)</p>
                 <p><a href={{ url_for('blueprint.member_page') }}>{%trans%}Member Page{%endtrans%}</a> (login_required: member@example.com / Password1)</p>

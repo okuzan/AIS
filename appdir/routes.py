@@ -53,6 +53,7 @@ def admin_page():
                 <p><a href={{ url_for('blueprint.home_page') }}>{%trans%}Home Page{%endtrans%}</a> (accessible to anyone)</p>
                 <p><a href={{ url_for('blueprint.member_page') }}>{%trans%}Member Page{%endtrans%}</a> (login_required: member@example.com / Password1)</p>
                 <p><a href={{ url_for('blueprint.admin_page') }}>{%trans%}Admin Page{%endtrans%}</a> (role_required: admin@example.com / Password1')</p>
+                <p><a href={{ url_for('blueprint.admin_view') }}>{%trans%}View{%endtrans%}</a> (role_required: admin@example.com / Password1')</p>
                 <p><a href={{ url_for('user.logout') }}>{%trans%}Sign out{%endtrans%}</a></p>
             {% endblock %}
             """)
@@ -61,7 +62,7 @@ def admin_page():
 # The Admin page requires an 'Admin' role.
 @blueprint.route('/admin/view')
 @roles_required('Admin')  # Use of @roles_required decorator
-def admin_view_page():
+def admin_view():
     con = sql.connect('dbs/zlagoda.db')
     con.row_factory = sql.Row
 

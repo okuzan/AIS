@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block content %}
+    {% from "_macros.html" import render_field, render_submit_field %}
+    <head>
+        <style type="text/css">
+            body {
+                text-align: center;
+            }
+
+            div.form {
+                display: block;
+                text-align: center;
+            }
+
+            form {
+                display: inline-block;
+                margin-left: auto;
+                margin-right: auto;
+                text-align: left;
+            }
+        </style>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+        <script type="text/javascript">
+            $(document).ready(function () {
+                var checkboxes_value = [];
+
+                console.log(checkboxes_value + "!")
+
+                $('#sss').on('click', function (e) {
+                    $('.cb').each(function () {
+                        if (this.checked) checkboxes_value.push($(this).val());
+                    });
+                    checkboxes_value = checkboxes_value.toString();
+                    console.log(checkboxes_value + "!")
+                    console.log("clicked")
+                    //Send data to the email script
+                    $.ajax({
+                        type: 'POST',
+                        url: '/data',
+                        data: {'data': JSON.stringify(checkboxes_value)},
+                        success: function (response) {
+                            alert('Recorded');
+                        },
+                        error: function (err) {
+                            console.log(err);
+                        }
+                    });
+                });
+            });
+
+        </script>
+    </head>
+    <!-- action="/register" method="POST" -->
+    <body>
+    <h1>{% trans %}Register{% endtrans %}</h1>
+    <br>
+    <form style="width:400px; display:table" action="/user/register" method="POST" novalidate formnovalidate class="form" role="form">
+        {{ form.hidden_tag() }}
+
+        {# Username or Email #}
+        {% set field = form.username if user_manager.USER_ENABLE_USERNAME else form.email %}
+        <div class="form-group {% if field.errors %}has-error{% endif %}">
+            {# Label on left, "Already registered? Sign in." on right #}
+            <div class="row">
+                <div class="col-xs-6">
+                    <label for="{{ field.id }}" class="control-label">{{ field.label.text }}</label>
+                </div>
+                <div class="col-xs-6 text-right">
+                    {% if user_manager.USER_ENABLE_REGISTER %}
+                        <a href="{{ url_for('user.login') }}" tabindex='290'>
+                            {% trans %}Already registered? Sign in.{% endtrans %}</a>
+                    {% endif %}
+                </div>
+            </div>
+            {{ field(class_='form-control', tabindex=210) }}
+            {% if field.errors %}
+                {% for e in field.errors %}
+                    <p class="help-block">{{ e }}</p>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        {% if user_manager.USER_ENABLE_EMAIL and user_manager.USER_ENABLE_USERNAME %}
+            {{ render_field(form.email, tabindex=220) }}
+        {% endif %}
+
+        {{ render_field(form.password, tabindex=230) }}
+
+        {% if user_manager.USER_REQUIRE_RETYPE_PASSWORD %}
+            {{ render_field(form.retype_password, tabindex=240) }}
+        {% endif %}
+        <input type="checkbox" class="cb" value="Manager"/> Manager <br/>
+        <br>
+        <!-- {{ render_submit_field(form.submit, tabindex=280) }} -->
+        {#<button type="submit" class="form-control btn btn-default btn-primary">{{label}}</button>#}
+        <input id="sss" type="submit" class="btn btn-default btn-primary" value="Submit"
+               {% if tabindex %}tabindex="280"{% endif %}
+        >
+
+    </form>
+
+{% endblock %}
+
+</body>

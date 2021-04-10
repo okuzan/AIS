@@ -1,24 +1,37 @@
+<style type="text/css">
+    .navbar-texty {
+        position: absolute;
+        top: 13px;
+    }
+</style>
 {% extends "bootstrap/base.html" %}
-{% block title %}This is an example page{% endblock %}
+{% block title %}AIS{% endblock %}
 
 {% block navbar %}
     <nav class="navbar navbar-inverse">
         <div class="container-fluid text-center">
             <div class="navbar-header">
-                <a class="navbar-brand" href={{ url_for("blueprint.home_page") }}>WebSiteName</a>
+                <a class="navbar-brand" href={{ url_for("blueprint.home_page") }}>AIS</a>
             </div>
             <ul class="nav navbar-nav">
                 <li class="active"><a href{{ url_for("blueprint.home_page") }}>Home</a></li>
-                <li><a href={{ url_for("blueprint.home_page") }}>Page 1</a></li>
-                <li><a href={{ url_for("blueprint.home_page") }}>Page 2</a></li>
+                <li><a href={{ url_for("blueprint.home_page") }}>Data</a></li>
+                <li><a href={{ url_for("blueprint.home_page") }}>Queries</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 {% if current_user.is_authenticated %}
-                    <li> <p style="color:whitesmoke"> {{ current_user.email}} </p></li>
-                    <li><a href={{ url_for('user.logout') }}><span class="glyphicon glyphicon-user"></span>Log out</a>
-                    </li>
+                    {% if current_user.has_roles('Manager') %}
+                        <li class="navbar-texty"><p style="color:whitesmoke"> {{ current_user.email }} (Manager) </p>
+                        </li>
+                        <li><a href={{ url_for('user.logout') }}><span class="glyphicon glyphicon-log-out"></span></a>
+                        </li>
+                    {% else %}
+                        <li class="navbar-texty"><p style="color:whitesmoke"> {{ current_user.email }} </p></li>
+                        <li><a href={{ url_for('user.logout') }}><span class="glyphicon glyphicon-log-out"></span></a>
+                        </li>
+                    {% endif %}
                 {% else %}
-                    <li><a href={{ url_for('user.login') }}><span class="glyphicon glyphicon-log-in"></span>Login</a>
+                    <li><a href={{ url_for('blueprint.login_page') }}><span class="glyphicon glyphicon-log-in"></span></a>
                     </li>
                 {% endif %}
             </ul>

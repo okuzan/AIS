@@ -15,6 +15,19 @@ def home_page():
     return render_template('home.html')
 
 
+@roles_required('Manager')  # Use of @roles_required decorator
+@blueprint.route('/register')
+def register_page():
+    form = user_manager.RegisterFormClass()
+    return render_template('register.html', form=form)
+
+
+@blueprint.route('/sign-in')
+def login_page():
+    form = user_manager.LoginFormClass()
+    return render_template('login.html', form=form)
+
+
 # The Members page is only  k accessible to authenticated users
 @blueprint.route('/members')
 @login_required  # Use of @login_required decorator
@@ -27,6 +40,21 @@ def member_page():
 @roles_required('Manager')  # Use of @roles_required decorator
 def admin_page():
     return render_template('admin.html')
+
+
+@blueprint.route('/data', methods=['POST'])
+def data():
+    if request.method == 'POST':
+        print(request.form['data'])
+        print(request.form['data'] == '"Manager"')
+        last_role = "Manager" if request.form['data'] == '"Manager"' else "Cashier"
+        file = open('role.txt', 'w')
+        file.write(last_role)
+        file.close()
+        return render_template("home.html")
+
+    else:
+        return render_template("home.html")
 
 
 @blueprint.route('/register', methods=['POST'])

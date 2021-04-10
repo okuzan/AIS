@@ -6,7 +6,6 @@ from flask_user import UserManager, UserMixin
 from datetime import datetime
 from flask_user.signals import user_registered
 
-
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -81,12 +80,15 @@ if not User.query.filter(User.email == 'admin@example.com').first():
 
 
 
-# @user_registered.connect_via(app)
-# def _after_user_registered_hook(sender, user, **extra):
-#     print(sender)
-#     role = Role.query.filter_by(name='Manager').one()
-#     user.roles.append(role)
-#     app.user_manager.db.session.commit()
+@user_registered.connect_via(app)
+def _after_user_registered_hook(sender, user, **extra):
+    print("USER REGISTERED")
+    file = open('role.txt')
+    last_role = file.read()
+    print(last_role)
+    role = Role.query.filter_by(name=last_role).one()
+    user.roles.append(role)
+    app.user_manager.db.session.commit()
 
 
 # Create all database tables

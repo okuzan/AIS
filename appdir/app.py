@@ -1,4 +1,4 @@
-from appdir import app, db
+from appdir import app
 
 # Start development web server
 if __name__ == '__main__':

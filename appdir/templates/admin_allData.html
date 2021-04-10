@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <h4 class="text-center m-3">{{tablenameProducer}}</h4>
+    <table class="table table-striped">
+        <thead>
+        {% for nameProducer in namesProducer %}
+            <td><strong>{{nameProducer}}</strong></td>
+        {% endfor %}
+        </thead>
+
+        {% for rowProducer in rowsProducer %}
+            <tr>
+                {% for nameProducer in namesProducer %}
+                    <td>{{rowProducer[nameProducer]}}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+
+    <h4 class="text-center m-3">{{tablenameReturn_Contract}}</h4>
+    <table class="table table-striped">
+        <thead>
+        {% for nameReturn_Contract in namesReturn_Contract %}
+            <td><strong>{{nameReturn_Contract}}</strong></td>
+        {% endfor %}
+        </thead>
+
+        {% for rowReturn_Contract in rowsReturn_Contract %}
+            <tr>
+                {% for nameReturn_Contract in namesReturn_Contract %}
+                    <td>{{rowReturn_Contract[nameReturn_Contract]}}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+
+    <h4 class="text-center m-3">{{tablenameEmployee}}</h4>
+    <table class="table table-striped">
+        <thead>
+        {% for nameEmployee in namesEmployee %}
+            <td><strong>{{nameEmployee}}</strong></td>
+        {% endfor %}
+        </thead>
+
+        {% for rowEmployee in rowsEmployee %}
+            <tr>
+                {% for nameEmployee in namesEmployee %}
+                    <td>{{rowEmployee[nameEmployee]}}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+
+    <h4 class="text-center m-3">{{tablenameConsignment}}</h4>
+    <table class="table table-striped">
+        <thead>
+        {% for nameConsignment in namesConsignment %}
+            <td><strong>{{nameConsignment}}</strong></td>
+        {% endfor %}
+        </thead>
+
+        {% for rowConsignment in rowsConsignment %}
+            <tr>
+                {% for nameConsignment in namesConsignment %}
+                    <td>{{rowConsignment[nameConsignment]}}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+
+    <h4 class="text-center m-3">{{tablenameSale}}</h4>
+    <table class="table table-striped">
+        <thead>
+        {% for nameSale in namesSale %}
+            <td><strong>{{nameSale}}</strong></td>
+        {% endfor %}
+        </thead>
+
+        {% for rowSale in rowsSale %}
+            <tr>
+                {% for nameSale in namesSale %}
+                    <td>{{rowSale[nameSale]}}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+
+    <h4 class="text-center m-3">{{tablenameCheque}}</h4>
+    <table class="table table-striped">
+        <thead>
+        {% for nameCheque in namesCheque %}
+            <td><strong>{{nameCheque}}</strong></td>
+        {% endfor %}
+        </thead>
+
+        {% for rowCheque in rowsCheque %}
+            <tr>
+                {% for nameCheque in namesCheque %}
+                    <td>{{rowCheque[nameCheque]}}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+
+    <h4 class="text-center m-3">{{tablenameProduct}}</h4>
+    <table class="table table-striped">
+        <thead>
+        {% for nameProduct in namesProduct %}
+            <td><strong>{{nameProduct}}</strong></td>
+        {% endfor %}
+        </thead>
+
+        {% for rowProduct in rowsProduct %}
+            <tr>
+                {% for nameProduct in namesProduct %}
+                    <td>{{rowProduct[nameProduct]}}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+
+    <h4 class="text-center m-3">{{tablenameCategory}}</h4>
+    <table class="table table-striped">
+        <thead>
+        {% for nameCategory in namesCategory %}
+            <td><strong>{{nameCategory}}</strong></td>
+        {% endfor %}
+        </thead>
+
+        {% for rowCategory in rowsCategory %}
+            <tr>
+                {% for nameCategory in namesCategory %}
+                    <td>{{rowCategory[nameCategory]}}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+
+    <h4 class="text-center m-3">{{tablenameStore_Product}}</h4>
+    <table class="table table-striped">
+        <thead>
+        {% for nameStore_Product in namesStore_Product %}
+            <td><strong>{{nameStore_Product}}</strong></td>
+        {% endfor %}
+        </thead>
+
+        {% for rowStore_Product in rowsStore_Product %}
+            <tr>
+                {% for nameStore_Product in namesStore_Product %}
+                    <td>{{rowStore_Product[nameStore_Product]}}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+
+    <h4 class="text-center m-3">{{tablenameCustomer_Card}}</h4>
+    <table class="table table-striped">
+        <thead>
+        {% for nameCustomer_Card in namesCustomer_Card %}
+            <td><strong>{{nameCustomer_Card}}</strong></td>
+        {% endfor %}
+        </thead>
+
+        {% for rowCustomer_Card in rowsCustomer_Card %}
+            <tr>
+                {% for nameCustomer_Card in namesCustomer_Card %}
+                    <td>{{rowCustomer_Card[nameCustomer_Card]}}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+
+    <a href = "/">Go back to home page</a>
+
+{% endblock %}

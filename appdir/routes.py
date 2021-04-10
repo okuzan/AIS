@@ -9,10 +9,17 @@ from flask_user.forms import LoginForm
 
 blueprint = Blueprint('blueprint', __name__)
 
+from models import User, datetime, user_manager
+
 
 # The Home page is accessible to anyone
 @blueprint.route('/')
 def home_page():
+    user = User (
+        email='member@example.com',
+        email_confirmed_at=datetime.utcnow(),
+        password=user_manager.hash_password('Password1'),
+    )
     return render_template('home.html')
 
 
@@ -73,3 +80,80 @@ def category():
                 con.close()
 
     return render_template('form.html', form=form, title='Add category')
+
+
+@blueprint.route('/admin_allData/', methods=['get', 'post'])
+@roles_required('Admin')
+def admin_allData():
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+
+        # Data for Producer
+        cur.execute("select * from cheque")
+        namesProducer = [description[0] for description in cur.description]
+        rowsProducer = cur.fetchall()
+
+        # Data for Return_Contract
+        cur.execute("select * from return_contract")
+        namesReturn_Contract = [description[0] for description in cur.description]
+        rowsReturn_Contract = cur.fetchall()
+
+        # Data for Employee
+        cur.execute("select * from employee")
+        namesEmployee = [description[0] for description in cur.description]
+        rowsEmployee = cur.fetchall()
+
+        # Data for Consignment
+        cur.execute("select * from consignment")
+        namesConsignment = [description[0] for description in cur.description]
+        rowsConsignment = cur.fetchall()
+
+        # Data for Sale
+        cur.execute("select * from sale")
+        namesSale = [description[0] for description in cur.description]
+        rowsSale = cur.fetchall()
+
+        # Data for Cheque
+        cur.execute("select * from cheque")
+        namesCheque = [description[0] for description in cur.description]
+        rowsCheque = cur.fetchall()
+
+        # Data for Product
+        cur.execute("select * from product")
+        namesProduct = [description[0] for description in cur.description]
+        rowsProduct = cur.fetchall()
+
+        # Data for Category
+        cur.execute("select * from category")
+        namesCategory = [description[0] for description in cur.description]
+        rowsCategory = cur.fetchall()
+
+        # Data for Store_Product
+        cur.execute("select * from store_product")
+        namesStore_Product = [description[0] for description in cur.description]
+        rowsStore_Product = cur.fetchall()
+
+        # Data for Customer_Card
+        cur.execute("select * from customer_card")
+        namesCustomer_Card = [description[0] for description in cur.description]
+        rowsCustomer_Card = cur.fetchall()
+
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template('admin_allData.html', title='All Data',
+                           tablenameProducer='Producer', namesProducer=namesProducer, rowsProducer=rowsProducer,
+                           tablenameReturn_Contract='Return Contract', namesReturn_Contract=namesReturn_Contract, rowsReturn_Contract=rowsReturn_Contract,
+                           tablenameEmployee='Employee', namesEmployee=namesEmployee, rowsEmployee=rowsEmployee,
+                           tablenameConsignment='Consignment', namesConsignment=namesConsignment, rowsConsignment=rowsConsignment,
+                           tablenameSale='Sale', namesSale=namesSale, rowsSale=rowsSale,
+                           tablenameCheque='Cheque', namesCheque=namesCheque, rowsCheque=rowsCheque,
+                           tablenameProduct='Product', namesProduct=namesProduct, rowsProduct=rowsProduct,
+                           tablenameCategory='Category', namesCategory=namesCategory, rowsCategory=rowsCategory,
+                           tablenameStore_Product='Store Product', namesStore_Product=namesStore_Product, rowsStore_Product=rowsStore_Product,
+                           tablenameCustomer_Card='Customer Card', namesCustomer_Card=namesCustomer_Card, rowsCustomer_Card=rowsCustomer_Card)

@@ -1,9 +1,10 @@
-from flask import render_template_string, Blueprint, render_template
-from flask_user import login_required, roles_required
-
+import datetime
 import sqlite3 as sql
 
-from flask_user.forms import LoginForm
+from flask import Blueprint, render_template, request, redirect, url_for
+from flask_user import login_required, roles_required
+
+from models import User, datetime, user_manager, db, Role
 
 blueprint = Blueprint('blueprint', __name__)
 
@@ -23,14 +24,36 @@ def member_page():
 
 # The Admin page requires an 'Admin' role.
 @blueprint.route('/admin')
-@roles_required('Admin')  # Use of @roles_required decorator
+@roles_required('Manager')  # Use of @roles_required decorator
 def admin_page():
     return render_template('admin.html')
 
 
+@blueprint.route('/register', methods=['POST'])
+def register():
+    if request.method == 'POST':
+        reg_username = request.form['email']
+        reg_password = request.form['password']
+        reg_role = request.form['role']
+
+        user = User(
+            email=reg_username,
+            email_confirmed_at=datetime.utcnow(),
+            password=user_manager.hash_password(reg_password),
+        )
+        role_name = "Manager" if reg_role == 'manager' else "Cashier"
+        role = Role.query.filter_by(name=role_name).one()
+        user.roles.append(role)
+        user_manager.db.session.commit()
+        db.session.add(user)
+        db.session.commit()
+
+        return redirect(url_for('blueprint.home_page'))
+
+
 # The Admin page requires an 'Admin' role.
 @blueprint.route('/admin/view')
-@roles_required('Admin')  # Use of @roles_required decorator
+@roles_required('Manager')  # Use of @roles_required decorator
 def admin_view():
     con = sql.connect('dbs/zlagoda.db')
     con.row_factory = sql.Row

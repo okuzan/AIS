@@ -6,13 +6,11 @@ from flask_bootstrap import Bootstrap
 from config import Config
 from flask_babelex import Babel
 from flask_sqlalchemy import SQLAlchemy
-from routes import blueprint
 
 
 # Create Flask app load app.config
 app = Flask(__name__)
 app.config.from_object(Config)
-app.register_blueprint(blueprint)
 
 # Initialize Flask-BabelEx
 babel = Babel(app)
@@ -26,4 +24,5 @@ Bootstrap(app)
 # Create all database tables
 # db.create_all()
 
-from appdir import routes, models
+from routes import blueprint
+app.register_blueprint(blueprint)

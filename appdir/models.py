@@ -1,6 +1,10 @@
+from flask_user.forms import RegisterForm
+from wtforms import BooleanField, StringField
+
 from appdir import app, db
 from flask_user import UserManager, UserMixin
 from datetime import datetime
+from flask_user.signals import user_registered
 
 
 class User(db.Model, UserMixin):
@@ -34,14 +38,26 @@ class UserRoles(db.Model):
     __tablename__ = 'user_roles'
     id = db.Column(db.Integer(), primary_key=True)
     user_id = db.Column(db.Integer(), db.ForeignKey('users.id', ondelete='CASCADE'))
-    role_id = db.Column(db.Integer(), db.ForeignKey('roles.id', ondelete='CASCADE'))
+    role_id = db.Column(db.Integer(), db.ForeignKey('roles.id', ondelete='CASCADE'), default=1)
 
 
 # Setup Flask-User and specify the User data-model
-user_manager = UserManager(app, db, User)
+class CustomRegisterForm(RegisterForm):
+    role = StringField('Role')
 
 
-# Create 'member@example.com' user with no roles
+class CustomeUserManager(UserManager):
+    def __init__(self, app, db, UserClass, **kwargs):
+        super().__init__(app, db, UserClass, **kwargs)
+        self.RegisterFormClass = CustomRegisterForm
+
+    def customize(self, app):
+        pass
+
+
+user_manager = CustomeUserManager(app, db, User)
+
+# Create 'member@example.com' user with 'Cashier' role
 if not User.query.filter(User.email == 'member@example.com').first():
     user = User(
         email='member@example.com',
@@ -52,7 +68,7 @@ if not User.query.filter(User.email == 'member@example.com').first():
     db.session.add(user)
     db.session.commit()
 
-# Create 'admin@example.com' user with 'Admin' and 'Agent' roles
+# Create 'admin@example.com' user with 'Manager'role
 if not User.query.filter(User.email == 'admin@example.com').first():
     user = User(
         email='admin@example.com',
@@ -62,6 +78,16 @@ if not User.query.filter(User.email == 'admin@example.com').first():
     user.roles.append(Role(name='Manager'))
     db.session.add(user)
     db.session.commit()
+
+
+
+@user_registered.connect_via(app)
+def _after_user_registered_hook(sender, user, **extra):
+    print(sender)
+    role = Role.query.filter_by(name='Manager').one()
+    user.roles.append(role)
+    app.user_manager.db.session.commit()
+
 
 # Create all database tables
 db.create_all()

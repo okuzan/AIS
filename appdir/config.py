@@ -5,7 +5,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 
 class Config(object):
-    SECRET_KEY = 'you-will-never-guess'
+    SECRET_KEY = 'you-will-never-guess-this-strong-password'
 
     # Flask-SQLAlchemy settings
     SQLALCHEMY_DATABASE_URI = 'sqlite:///basic_app.sqlite'  # File-based SQL database
@@ -13,17 +13,17 @@ class Config(object):
 
     # Flask-Mail SMTP server settings
     MAIL_SERVER = 'smtp.gmail.com'
-    MAIL_PORT = 465
-    MAIL_USE_SSL = True
-    MAIL_USE_TLS = False
-    MAIL_USERNAME = 'email@example.com'
-    MAIL_PASSWORD = 'password'
+    MAIL_PORT = 587
+    MAIL_USE_SSL = False
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = 'cdutboryslav@gmail.com'
+    MAIL_PASSWORD = 'cdut2020'
     MAIL_DEFAULT_SENDER = '"MyApp" <noreply@example.com>'
 
     # Flask-User settings
-    USER_APP_NAME = "Flask-User Basic App"  # Shown in and email templates and page footers
+    USER_APP_NAME = "AIS"  # Shown in and email templates and page footers
     USER_ENABLE_EMAIL = True  # Enable email authentication
     USER_ENABLE_USERNAME = False  # Disable username authentication
     USER_EMAIL_SENDER_NAME = USER_APP_NAME
-    USER_EMAIL_SENDER_EMAIL = "noreply@example.com"
+    USER_EMAIL_SENDER_EMAIL = "cdutboryslav@gmail.com"
 

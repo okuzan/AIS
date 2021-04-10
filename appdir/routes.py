@@ -1,5 +1,3 @@
-import sqlite3
-
 from flask import render_template_string, Blueprint, render_template
 from flask_user import login_required, roles_required
 import sqlite3 as sql

@@ -1,6 +1,9 @@
 from flask import render_template_string, Blueprint, render_template
 from flask_user import login_required, roles_required
+
 import sqlite3 as sql
+
+from flask_user.forms import LoginForm
 
 blueprint = Blueprint('blueprint', __name__)
 
@@ -11,7 +14,7 @@ def home_page():
     return render_template('home.html')
 
 
-# The Members page is only accessible to authenticated users
+# The Members page is only  k accessible to authenticated users
 @blueprint.route('/members')
 @login_required  # Use of @login_required decorator
 def member_page():

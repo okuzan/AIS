@@ -64,12 +64,12 @@ def category():
                                    VALUES (?);''', (name,))
             con.commit()
             cur.close()
-            flash('Category was successfully added')
+            flash('Category was successfully added', 'success')
             return redirect(url_for('blueprint.category'))
         except sql.Error as error:
-            print("Error while connecting to sqlite", error)
+            flash('Name of category must be unique', 'danger')
+            return render_template('form.html', form=form, title='Add category')
         finally:
             if (con):
                 con.close()
-
     return render_template('form.html', form=form, title='Add category')

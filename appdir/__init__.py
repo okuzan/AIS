@@ -4,6 +4,7 @@ from flask_babelex import Babel
 from flask_sqlalchemy import SQLAlchemy
 from flask_user import UserManager, UserMixin
 from appdir.routes import blueprint
+from flask_bootstrap import Bootstrap
 
 
 # from appdir.models import db, User, Role, UserRoles
@@ -23,7 +24,7 @@ def create_app():
 
     # Initialize Flask-SQLAlchemy
     db = SQLAlchemy(app)
-
+    Bootstrap(app)
     # Define the User data-model.
     # NB: Make sure to add flask_user UserMixin !!!
     class User(db.Model, UserMixin):

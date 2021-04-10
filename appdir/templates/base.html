@@ -1,0 +1,24 @@
+{% extends "bootstrap/base.html" %}
+{% block title %}This is an example page{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-inverse">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="blueprint.home_page">WebSiteName</a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="blueprint.home_page">Home</a></li>
+                <li><a href="blueprint.home_page">Page 1</a></li>
+                <li><a href="blueprint.home_page">Page 2</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                {% if current_user.is_authenticated %}
+                    <li><a href={{ url_for('user.logout') }}><span class="glyphicon glyphicon-user"></span>Log out</a></li>
+                {% else %}
+                    <li><a href={{ url_for('user.login') }}><span class="glyphicon glyphicon-log-in"></span>Login</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+{% endblock %}

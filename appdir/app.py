@@ -1,6 +1,7 @@
 from appdir import create_app
 
 
+
 # Start development web server
 if __name__ == '__main__':
     app = create_app()

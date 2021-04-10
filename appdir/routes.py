@@ -13,7 +13,7 @@ def home_page():
     return render_template('home.html')
 
 
-# The Members page is only accessible to authenticated users
+# The Members page is only  k accessible to authenticated users
 @blueprint.route('/members')
 @login_required  # Use of @login_required decorator
 def member_page():

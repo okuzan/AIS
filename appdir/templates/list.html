@@ -1,10 +1,6 @@
-<!doctype html>
-<html>
-<head>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-     integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous"/>
-</head>
-   <body>
+{% extends "base.html" %}
+{% block content %}
+
    <h4 class="text-center m-3">{{tablename}}</h4>
    <table class="table table-striped">
          <thead>
@@ -23,5 +19,5 @@
       </table>
 
       <a href = "/">Go back to home page</a>
-   </body>
-</html>
+  
+{% endblock %}

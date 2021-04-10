@@ -81,12 +81,12 @@ if not User.query.filter(User.email == 'admin@example.com').first():
 
 
 
-@user_registered.connect_via(app)
-def _after_user_registered_hook(sender, user, **extra):
-    print(sender)
-    role = Role.query.filter_by(name='Manager').one()
-    user.roles.append(role)
-    app.user_manager.db.session.commit()
+# @user_registered.connect_via(app)
+# def _after_user_registered_hook(sender, user, **extra):
+#     print(sender)
+#     role = Role.query.filter_by(name='Manager').one()
+#     user.roles.append(role)
+#     app.user_manager.db.session.commit()
 
 
 # Create all database tables

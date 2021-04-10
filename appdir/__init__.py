@@ -18,30 +18,10 @@ babel = Babel(app)
 # Initialize Flask-SQLAlchemy
 db = SQLAlchemy(app)
 
-# Create all database tables
-db.create_all()
+# Setup Flask-User and specify the User data-model
+# user_manager = UserManager(app, db, User)
 
+# Create all database tables
+# db.create_all()
 
 from appdir import routes, models
-
-# # Create 'member@example.com' user with no roles
-# if not User.query.filter(User.email == 'member@example.com').first():
-#     user = User(
-#         email='member@example.com',
-#         email_confirmed_at=datetime.datetime.utcnow(),
-#         password=user_manager.hash_password('Password1'),
-#     )
-#     user.roles.append(Role(name='Cashier'))
-#     db.session.add(user)
-#     db.session.commit()
-#
-# # Create 'admin@example.com' user with 'Admin' and 'Agent' roles
-# if not User.query.filter(User.email == 'admin@example.com').first():
-#     user = User(
-#         email='admin@example.com',
-#         email_confirmed_at=datetime.datetime.utcnow(),
-#         password=user_manager.hash_password('Password1'),
-#     )
-#     user.roles.append(Role(name='Manager'))
-#     db.session.add(user)
-#     db.session.commit()

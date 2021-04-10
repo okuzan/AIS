@@ -1,4 +1,4 @@
-{% extengit push -u origin mastergit push -u origin masterds "flask_user_layout.html" %}
+{% extends "base.html" %}
 {% block content %}
     <h2>{%trans%}Home page{%endtrans%}</h2>
     <p><a href={{ url_for('user.login') }}>{%trans%}Sign in{%endtrans%}</a></p>

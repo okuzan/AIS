@@ -34,6 +34,7 @@ def admin_view():
 
     cur = con.cursor()
     cur.execute("select * from cheque")
-
+    names = [description[0] for description in cur.description]
     rows = cur.fetchall()
-    return render_template("list.html", rows=rows)
+    return render_template("list.html", rows=rows, tablename="Check info", titles=names)
+

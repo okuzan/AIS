@@ -288,6 +288,7 @@ def employee():
                 con.close()
     return render_template('form.html', form=form, title='Add Employee')
 
+
 @blueprint.route('/customer/', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator
 def customer():

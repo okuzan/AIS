@@ -177,14 +177,16 @@ def delete_page():
     return redirect('/admin_allData')
 
 
+@roles_required('Manager')
 @blueprint.route('/<int:rowid>/update', methods=['GET', 'POST'])
 def update(rowid):
+    print(request.form)
     print(rowid)
     con = sql.connect('dbs/zlagoda.db')
     cur = con.cursor()
-    cur.execute("SELECT * FROM EMPLOYEE LIMIT 1 OFFSET " + (str(rowid))),
+    cur.execute("SELECT * FROM EMPLOYEE LIMIT 1 OFFSET " + (str(rowid - 1))),
     row = cur.fetchall()[0]
-    cur.execute("SELECT rowid FROM EMPLOYEE LIMIT 1 OFFSET " + (str(rowid))),
+    cur.execute("SELECT rowid FROM EMPLOYEE LIMIT 1 OFFSET " + (str(rowid - 1))),
     row2 = cur.fetchall()[0]
     print(row2)
     print("rowid!!")
@@ -195,10 +197,8 @@ def update(rowid):
     form.patronymic.data = row[3]
     form.role = row[4]  # careful : select fields don't need 'data'
     form.salary.data = str(row[5])
-    form.date_of_birth.data = datetime(2000, 12, 12)
-    form.date_of_start.data = datetime(2016, 12, 12)
-    # form.date_of_birth.data = datetime.strptime(str(row[6]), '%Y-%m-%d')
-    # form.date_of_start.data = datetime.strptime(str(row[7]), '%Y-%m-%d')
+    form.date_of_birth.data = datetime.strptime(str(row[6]), '%Y-%m-%d')
+    form.date_of_start.data = datetime.strptime(str(row[7]), '%Y-%m-%d')
     form.phone_number.data = str(row[8])
     form.city.data = row[9]
     form.street.data = row[10]
@@ -206,22 +206,21 @@ def update(rowid):
     form.password.data = '.'  # just to pass validation, that won't be assigned
     if form.is_submitted():
         try:
-            print('salary')
-            print(form.salary.gettext)
+            birth = request.form['date_of_birth']
+            start = request.form['date_of_start']
+            if datetime.strptime(birth, '%Y-%m-%d').date() > (
+                    datetime.strptime(start, '%Y-%m-%d').date() - relativedelta(years=18)):
+                flash('Age can`t be less than 18', 'danger')
+                return render_template('form.html', form=form, title='Update employee')
 
-            # birth = form.date_of_birth.data
-            # start = form.date_of_start.data
-            # if (birth > (start - relativedelta(years=18))):
-            #     flash('Age can`t be less than 18', 'danger')
-            #     return render_template('form.html', form=form, title='Update employee')
-
-            values = (form.surname.data, form.name.data, form.patronymic.data, form.role,
-                      form.salary.data,
-                      form.phone_number.data, form.city.data, form.street.data,
-                      form.zip_code.data, (str(rowid)))
+            values = (request.form['surname'], request.form['name'], request.form['patronymic'], request.form['role'],
+                      request.form['salary'], birth, start,
+                      request.form['phone_number'], request.form['city'], request.form['street'],
+                      request.form['zip_code'], (str(rowid)))
+            print(request)
             cur.execute("""UPDATE EMPLOYEE
                         SET EMPL_SURNAME = ?, EMPL_NAME = ?, EMPL_PATRONYMIC = ?, ROLE = ?,
-                        SALARY = ?,
+                        SALARY = ?,DATE_OF_BIRTH = ?, DATE_OF_START = ?,
                         PHONE_NUMBER = ?, CITY = ?, STREET = ?, ZIP_CODE = ?
                         WHERE rowid = (SELECT rowid FROM EMPLOYEE LIMIT 1 OFFSET ?)""", values)
 
@@ -238,9 +237,9 @@ def update(rowid):
     return render_template('form.html', form=form, title='Update Employee')
 
 
-@blueprint.route('/admin_allData', methods=['get'])
+@blueprint.route('/admin/data', methods=['get'])
 @roles_required('Manager')
-def admin_allData():
+def admin_data():
     try:
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row

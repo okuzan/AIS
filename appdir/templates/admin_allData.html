@@ -23,9 +23,9 @@
                     </form>
                 </td>
                 <td>
-                    <form method=get
+                    <form method=post
                           action="{{ url_for('blueprint.update',
-                      rowid=loop.index0,
+                      rowid=loop.index,
                       table=tablenameProducer) }}">
                         <button>UPD</button>
                     </form>
@@ -47,19 +47,19 @@
             <tr>
                 {% for nameReturn_Contract in namesReturn_Contract %}
                     <td>{{ rowReturn_Contract[nameReturn_Contract] }}</td>
-                    <td>
-                        {#                        <form method="POST" action="./update">#}
-                        {#                            <input type="hidden" value="{{ rowReturn_Contract[nameReturn_Contract] }}"#}
-                        {#                                   name="beforename">#}
-                        {#                            <input type="text" value="{{ rowReturn_Contract[nameReturn_Contract] }}" name="updatedname">#}
-                        {#                            <input type="submit" value=">" style="float: right">#}
+{#                    <td>#}
+{#                                                <form method="POST" action="./update">#}
+{#                                                    <input type="hidden" value="{{ rowReturn_Contract[nameReturn_Contract] }}"#}
+{#                                                           name="beforename">#}
+{#                                                    <input type="text" value="{{ rowReturn_Contract[nameReturn_Contract] }}" name="updatedname">#}
+{#                                                    <input type="submit" value=">" style="float: right">#}
                         {#                        </form>#}
-                        {#                        <form method="POST" action="{{ url_for('blueprint.update') }}">#}
+{#                                                <form method="POST" action="{{ url_for('blueprint.update') }}">#}
                         {#                            <input type="hidden" name="id" value="1">#}
                         {#                            <input type="text" name="name" placeholder="Enter new name">#}
                         {#                        </form>#}
 
-                    </td>
+{#                    </td>#}
                 {% endfor %}
 
             </tr>
@@ -82,7 +82,7 @@
                 <td>
                     <form method=get
                           action="{{ url_for('blueprint.update',
-                      rowid=loop.index0,
+                      rowid=loop.index,
                       table=tablenameEmployee) }}">
                         <button>UPD</button>
                     </form>

@@ -1,7 +1,7 @@
 from flask import Flask, render_template_string, Blueprint, render_template, request, redirect, url_for, flash
 from flask_user import login_required, roles_required
 from flask_script import Manager, Command, Shell
-from forms import CategoryForm, ProducerForm, EmployeeForm
+from forms import CategoryForm, ProducerForm, EmployeeForm, CustomerForm
 import random
 from dateutil.relativedelta import relativedelta
 
@@ -109,7 +109,7 @@ def admin_view():
 
 
 @blueprint.route('/category/', methods=['get', 'post'])
-@roles_required('Admin')  # Use of @roles_required decorator
+@roles_required('Manager')  # Use of @roles_required decorator
 def category():
     form = CategoryForm()
     if form.validate_on_submit():
@@ -137,7 +137,7 @@ def category():
 
 
 @blueprint.route('/admin_allData/', methods=['get', 'post'])
-@roles_required('Admin')
+@roles_required('Manager')
 def admin_allData():
     try:
         con = sql.connect('dbs/zlagoda.db')
@@ -214,7 +214,7 @@ def admin_allData():
 
 
 @blueprint.route('/producer/', methods=['get', 'post'])
-@roles_required('Admin')  # Use of @roles_required decorator
+@roles_required('Manager')  # Use of @roles_required decorator
 def producer():
     form = ProducerForm()
     if form.validate_on_submit():
@@ -241,7 +241,7 @@ def producer():
 
 
 @blueprint.route('/employee/', methods=['get', 'post'])
-@roles_required('Admin')  # Use of @roles_required decorator
+@roles_required('Manager')  # Use of @roles_required decorator
 def employee():
     form = EmployeeForm()
     if form.validate_on_submit():
@@ -273,3 +273,32 @@ def employee():
             if (con):
                 con.close()
     return render_template('form.html', form=form, title='Add Employee')
+
+@blueprint.route('/customer/', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def customer():
+    form = CustomerForm()
+    if form.validate_on_submit():
+        try:
+            con = sql.connect('dbs/zlagoda.db')
+            con.row_factory = sql.Row
+            cur = con.cursor()
+            cur.execute("SELECT CARD_NUMBER FROM CUSTOMER_CARD")
+            result = cur.fetchall()
+            num = random.randint(1,10000)
+            while(result.__contains__('c'+str(num))):
+                num=random.randint(1,10000)
+            eid = 'c'+str(num)
+            cur.execute('''INSERT INTO CUSTOMER_CARD(CARD_NUMBER, CUST_SURNAME, CUST_NAME, CUST_PATRONYMIC, PHONE_NUMBER, CITY, STREET, ZIP_CODE, PERCENT)
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);''', (eid, form.surname.data, form.name.data, form.patronymic.data, form.phone_number.data,  form.city.data, form.street.data, form.zip_code.data, form.percent.data))
+            con.commit()
+            cur.close()
+            flash('Customer Card was successfully added', 'success')
+            return redirect(url_for('blueprint.customer'))
+        except sql.Error as error:
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Add Customer Card')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Add Customer Card')

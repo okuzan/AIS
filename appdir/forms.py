@@ -1,6 +1,6 @@
 from flask_admin.form import DatePickerWidget
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, TextAreaField, validators, PasswordField, SelectField
+from wtforms import StringField, SubmitField, TextAreaField, validators, PasswordField, SelectField, widgets
 from wtforms.validators import DataRequired, Email
 from wtforms.fields.html5 import DateField
 
@@ -38,7 +38,14 @@ class ProducerForm(FlaskForm):
 
 
 class EmployeeForm(FlaskForm):
-    myField = SelectField(u'FK Producer', coerce=int, validators=[DataRequired()])
+    def __init__(self, data=None, *args, **kwargs):
+        hide_a = kwargs.pop('hide_a')
+        # row = kwargs.pop('row')
+        super(EmployeeForm, self).__init__(*args, **kwargs)
+        # if hide_a:
+            # self.password.widget = widgets.HiddenInput()
+            # self.name.data = row[2]
+
     name = StringField("Name: ", validators=[DataRequired(message="This field can not be empty"),
                                              validators.Length(max=50,
                                                                message="Employee name can not contain more than 50 symbols")])
@@ -81,6 +88,7 @@ class EmployeeForm(FlaskForm):
     submit = SubmitField("Submit")
 
 
+
 class CustomerForm(FlaskForm):
     name = StringField("Name: ", validators=[DataRequired(message="This field can not be empty"),
                                              validators.Length(max=50,
@@ -93,14 +101,14 @@ class CustomerForm(FlaskForm):
                                                                            message="Employee patronymic can not contain more than 50 symbols")])
 
     city = StringField("City: ", validators=[DataRequired(message="This field can not be empty"),
+                                             validators.Length(max=50,
+                                                               message="Producer name can not contain more than 50 symbols")])
+    street = StringField("Street: ", validators=[DataRequired(message="This field can not be empty"),
                                                  validators.Length(max=50,
                                                                    message="Producer name can not contain more than 50 symbols")])
-    street = StringField("Street: ", validators=[DataRequired(message="This field can not be empty"),
-                                                     validators.Length(max=50,
-                                                                       message="Producer name can not contain more than 50 symbols")])
     zip_code = StringField("Zip code: ", validators=[DataRequired(message="This field can not be empty"),
-                                                         validators.Regexp(r'(^\d{5}$)|(^\d{9}$)',
-                                                                           message="Incorrect zip code format, it can be xxxxx or xxxxxxxxx (only numbers allowed)")])
+                                                     validators.Regexp(r'(^\d{5}$)|(^\d{9}$)',
+                                                                       message="Incorrect zip code format, it can be xxxxx or xxxxxxxxx (only numbers allowed)")])
 
     phone_number = StringField("Phone: ", validators=[DataRequired(message="This field can not be empty"),
                                                       validators.Regexp(r'^\+\d{12}$',

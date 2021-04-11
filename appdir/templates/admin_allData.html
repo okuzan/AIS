@@ -22,6 +22,14 @@
                         <button>DEL</button>
                     </form>
                 </td>
+                <td>
+                    <form method=get
+                          action="{{ url_for('blueprint.update',
+                      rowid=loop.index0,
+                      table=tablenameProducer) }}">
+                        <button>UPD</button>
+                    </form>
+                </td>
 
             </tr>
         {% endfor %}
@@ -38,14 +46,19 @@
         {% for rowReturn_Contract in rowsReturn_Contract %}
             <tr>
                 {% for nameReturn_Contract in namesReturn_Contract %}
-{#                    <td>{{ rowReturn_Contract[nameReturn_Contract] }}</td>#}
+                    <td>{{ rowReturn_Contract[nameReturn_Contract] }}</td>
                     <td>
-                        <form method="POST" action="./update">
-                            <input type="hidden" value="{{ rowReturn_Contract[nameReturn_Contract] }}"
-                                   name="beforename">
-                            <input type="text" value="{{ rowReturn_Contract[nameReturn_Contract] }}" name="updatedname">
-                            <input type="submit" value="Update">
-                        </form>
+                        {#                        <form method="POST" action="./update">#}
+                        {#                            <input type="hidden" value="{{ rowReturn_Contract[nameReturn_Contract] }}"#}
+                        {#                                   name="beforename">#}
+                        {#                            <input type="text" value="{{ rowReturn_Contract[nameReturn_Contract] }}" name="updatedname">#}
+                        {#                            <input type="submit" value=">" style="float: right">#}
+                        {#                        </form>#}
+                        {#                        <form method="POST" action="{{ url_for('blueprint.update') }}">#}
+                        {#                            <input type="hidden" name="id" value="1">#}
+                        {#                            <input type="text" name="name" placeholder="Enter new name">#}
+                        {#                        </form>#}
+
                     </td>
                 {% endfor %}
 
@@ -66,6 +79,14 @@
                 {% for nameEmployee in namesEmployee %}
                     <td>{{ rowEmployee[nameEmployee] }}</td>
                 {% endfor %}
+                <td>
+                    <form method=get
+                          action="{{ url_for('blueprint.update',
+                      rowid=loop.index0,
+                      table=tablenameEmployee) }}">
+                        <button>UPD</button>
+                    </form>
+                </td>
             </tr>
         {% endfor %}
     </table>

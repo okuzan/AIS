@@ -2,6 +2,8 @@ import datetime
 from flask import Flask, render_template_string, Blueprint, render_template, request, redirect, url_for, flash
 from flask_user import login_required, roles_required
 from flask_script import Manager, Command, Shell
+from werkzeug.datastructures import MultiDict
+
 from forms import CategoryForm, ProducerForm, EmployeeForm, ProductForm, CustomerForm
 import random
 from dateutil.relativedelta import relativedelta
@@ -175,9 +177,65 @@ def delete_page():
     return redirect('/admin_allData')
 
 
-@blueprint.route("/update", methods=["POST"])
-def update():
-    pass
+@blueprint.route('/<int:rowid>/update', methods=['GET', 'POST'])
+def update(rowid):
+    print(rowid)
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute("SELECT * FROM EMPLOYEE LIMIT 1 OFFSET " + (str(rowid))),
+    row = cur.fetchall()[0]
+    cur.execute("SELECT rowid FROM EMPLOYEE LIMIT 1 OFFSET " + (str(rowid))),
+    row2 = cur.fetchall()[0]
+    print(row2)
+    print("rowid!!")
+    print(row)
+    form = EmployeeForm(hide_a=True)
+    form.surname.data = row[1]
+    form.name.data = row[2]
+    form.patronymic.data = row[3]
+    form.role = row[4]  # careful : select fields don't need 'data'
+    form.salary.data = str(row[5])
+    form.date_of_birth.data = datetime(2000, 12, 12)
+    form.date_of_start.data = datetime(2016, 12, 12)
+    # form.date_of_birth.data = datetime.strptime(str(row[6]), '%Y-%m-%d')
+    # form.date_of_start.data = datetime.strptime(str(row[7]), '%Y-%m-%d')
+    form.phone_number.data = str(row[8])
+    form.city.data = row[9]
+    form.street.data = row[10]
+    form.zip_code.data = str(row[11])
+    form.password.data = '.'  # just to pass validation, that won't be assigned
+    if form.is_submitted():
+        try:
+            print('salary')
+            print(form.salary.gettext)
+
+            # birth = form.date_of_birth.data
+            # start = form.date_of_start.data
+            # if (birth > (start - relativedelta(years=18))):
+            #     flash('Age can`t be less than 18', 'danger')
+            #     return render_template('form.html', form=form, title='Update employee')
+
+            values = (form.surname.data, form.name.data, form.patronymic.data, form.role,
+                      form.salary.data,
+                      form.phone_number.data, form.city.data, form.street.data,
+                      form.zip_code.data, (str(rowid)))
+            cur.execute("""UPDATE EMPLOYEE
+                        SET EMPL_SURNAME = ?, EMPL_NAME = ?, EMPL_PATRONYMIC = ?, ROLE = ?,
+                        SALARY = ?,
+                        PHONE_NUMBER = ?, CITY = ?, STREET = ?, ZIP_CODE = ?
+                        WHERE rowid = (SELECT rowid FROM EMPLOYEE LIMIT 1 OFFSET ?)""", values)
+
+            con.commit()
+            cur.close()
+            flash('Employee was successfully updated', 'success')
+            return redirect(url_for('blueprint.home_page'))
+        except sql.Error as error:
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Update Employee')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Update Employee')
 
 
 @blueprint.route('/admin_allData', methods=['get'])
@@ -290,10 +348,11 @@ def producer():
     return render_template('form.html', form=form, title='Add producer')
 
 
-@blueprint.route('/employee/', methods=['get', 'post'])
+@blueprint.route('/employee', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator
 def employee():
-    form = EmployeeForm()
+    form = EmployeeForm(hide_a=False)
+    form.name.data = "!!!!!!"
     con = sql.connect('dbs/zlagoda.db')
     cur = con.cursor()
     if form.validate_on_submit():

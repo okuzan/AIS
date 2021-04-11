@@ -356,7 +356,7 @@ def customer():
             con.commit()
             cur.close()
             flash('Customer Card was successfully added', 'success')
-            return redirect(url_for('blueprint.customer'))
+            return redirect(url_for('blueprint.home_page'))
         except sql.Error as error:
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Add Customer Card')
@@ -1001,3 +1001,4 @@ def admin_26Query():
         if (con):
             con.close()
     return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+

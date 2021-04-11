@@ -891,7 +891,7 @@ def store_product():
     ''')
     result = cur.fetchall()
     groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
-    form.product_number.choices = groups_list
+    form.product_number.choices =groups_list
 
     cur.execute('''SELECT UPC
                    FROM STORE_PRODUCT S
@@ -903,7 +903,7 @@ def store_product():
     ''')
     result = cur.fetchall()
     groups_list = [(i[0], "(" + str(i[0]) + ") ") for i in result]
-    form.upc_prom.choices = groups_list
+    form.upc_prom.choices = [('', '---')]+ groups_list
 
     if form.validate_on_submit():
         try:

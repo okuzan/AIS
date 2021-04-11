@@ -674,6 +674,54 @@ def update_category(rowid):
     return render_template('form.html', form=form, title='Update Category')
 
 
+@blueprint.route('/<int:rowid>/update-cheque', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def update_cheque(rowid):
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute("SELECT * FROM CATEGORY LIMIT 1 OFFSET " + (str(rowid - 1))),
+    row = cur.fetchall()[0]
+    form = CheckForm()
+    cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC
+                   FROM EMPLOYEE
+                   WHERE ROLE="manager"''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
+    form.employee.choices = groups_list
+    cur.execute('''SELECT CARD_NUMBER, CUST_SURNAME, CUST_NAME, CUST_PATRONYMIC
+                          FROM CUSTOMER_CARD''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
+    form.card.choices = [("", "---")] + groups_list
+    form.signature_date.data = row[3]  # todo
+    form.sum.data = str(row[4])
+    form.vat.data = str(row[5])
+    form.name.data = row[1]
+    if form.validate_on_submit():
+        try:
+            cur.execute('''UPDATE CHEQUE
+             SET ID_EMPLOYEE = ?, CARD_NUMBER = ?, 
+             PRINT_DATE = ?, SUM_TOTAL = ?, VAT = ?
+             WHERE CHECK_NUMBER = (SELECT CHECK_NUMBER FROM CHEQUE LIMIT 1 OFFSET ?)''', (
+                request.form['employee'],
+                request.form['card'],
+                request.form['data'],
+                request.form['sum'],
+                request.form['vat'],
+                str(rowid - 1)))
+            con.commit()
+            cur.close()
+            flash('Customer Card was successfully updated', 'success')
+            return redirect(url_for('blueprint.home_page'))
+        except sql.Error as error:
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Update Category')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Update Category')
+
+
 @blueprint.route('/<int:rowid>/update-product', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator
 def update_product(rowid):
@@ -831,11 +879,11 @@ def sample_form():
                           FROM CUSTOMER_CARD''')
     result = cur.fetchall()
     groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
-    form.card.choices = [("", "---")]+groups_list
-    #if form.validate_on_submit():
+    form.card.choices = [("", "---")] + groups_list
+    # if form.validate_on_submit():
     #    if form.flist.data:
     #        for item in form.flist.data:
-                    # do stuff
+    # do stuff
     return render_template('checkForm.html', form=form, title='Create check')
 
 
@@ -1129,7 +1177,7 @@ def store_product():
     con = sql.connect('dbs/zlagoda.db')
     cur = con.cursor()
     cur.execute('''SELECT ID_PRODUCT, PRODUCT_NAME FROM PRODUCT
-    WHERE 2>(SELECT COUNT(ID_PRODUCT)
+    WHERE (SELECT COUNT(ID_PRODUCT)
             FROM STORE_PRODUCT
             WHERE PRODUCT.ID_PRODUCT=ID_PRODUCT
     )
@@ -1179,6 +1227,7 @@ def store_product():
             if (con):
                 con.close()
     return render_template('form.html', form=form, title='Add Store Product')
+
 
 @blueprint.route('/consignment/', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator

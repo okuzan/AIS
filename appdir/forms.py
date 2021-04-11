@@ -38,13 +38,11 @@ class ProducerForm(FlaskForm):
 
 
 class EmployeeForm(FlaskForm):
-    def __init__(self, data=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         hide_a = kwargs.pop('hide_a')
-        # row = kwargs.pop('row')
         super(EmployeeForm, self).__init__(*args, **kwargs)
-        # if hide_a:
-            # self.password.widget = widgets.HiddenInput()
-            # self.name.data = row[2]
+        if hide_a:
+            self.password.widget = widgets.HiddenInput()
 
     name = StringField("Name: ", validators=[DataRequired(message="This field can not be empty"),
                                              validators.Length(max=50,
@@ -59,7 +57,7 @@ class EmployeeForm(FlaskForm):
                                                        validators.Length(max=50,
                                                                          message="Password can not contain more than 50 symbols")])
 
-    role = SelectField('Role', choices=[('M', 'manager'), ('C', 'cashier')])
+    role = SelectField('Role', choices=[('manager', 'manager'), ('cashier', 'cashier')])
 
     salary = StringField("Salary: ", validators=[DataRequired(message="This field can not be empty"),
                                                  validators.Regexp(r'(^\d+\.?\d+$)',

@@ -1,7 +1,9 @@
 from flask import Flask, render_template_string, Blueprint, render_template, request, redirect, url_for, flash
 from flask_user import login_required, roles_required
 from flask_script import Manager, Command, Shell
-from forms import CategoryForm, ProducerForm
+from forms import CategoryForm, ProducerForm, EmployeeForm
+import random
+from dateutil.relativedelta import relativedelta
 
 import datetime
 import sqlite3 as sql
@@ -236,3 +238,38 @@ def producer():
             if (con):
                 con.close()
     return render_template('form.html', form=form, title='Add producer')
+
+
+@blueprint.route('/employee/', methods=['get', 'post'])
+@roles_required('Admin')  # Use of @roles_required decorator
+def employee():
+    form = EmployeeForm()
+    if form.validate_on_submit():
+        try:
+            con = sql.connect('dbs/zlagoda.db')
+            birth = form.date_of_birth.data
+            start = form.date_of_start.data
+            if(birth>(start - relativedelta(years=18))):
+                flash('Age can`t be less than 18', 'danger')
+                return render_template('form.html', form=form, title='Add employee')
+            con.row_factory = sql.Row
+            cur = con.cursor()
+            cur.execute("SELECT ID_EMPLOYEE FROM EMPLOYEE")
+            result = cur.fetchall()
+            num = random.randint(1,10000)
+            while(result.__contains__('e'+str(num))):
+                num=random.randint(1,10000)
+            eid = 'e'+str(num)
+            cur.execute('''INSERT INTO EMPLOYEE(ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC, ROLE, SALARY, DATE_OF_BIRTH, DATE_OF_START, PHONE_NUMBER, CITY, STREET, ZIP_CODE, PASSWORD)
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''', (eid, form.surname.data, form.name.data, form.patronymic.data, form.role.data, form.salary.data, form.date_of_birth.data, form.date_of_start.data, form.phone_number.data,  form.city.data, form.street.data, form.zip_code.data, user_manager.hash_password(form.password.data)))
+            con.commit()
+            cur.close()
+            flash('Employee was successfully added', 'success')
+            return redirect(url_for('blueprint.employee'))
+        except sql.Error as error:
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Add Employee')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Add Employee')

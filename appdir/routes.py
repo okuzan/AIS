@@ -1,7 +1,7 @@
 import datetime
 from sqlite3 import Row
 
-from flask import Flask, render_template_string, Blueprint, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template_string, Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_user import login_required, roles_required
 from flask_script import Manager, Command, Shell
 from werkzeug.datastructures import MultiDict
@@ -131,9 +131,11 @@ def category():
                                    VALUES (?, ?);''', (max_id, name))
             con.commit()
             cur.close()
+            session.pop('_flashes', None)
             flash('Category was successfully added', 'success')
             return redirect(url_for('blueprint.category'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash('Name of category must be unique', 'danger')
             return render_template('form.html', form=form, title='Add category')
         finally:
@@ -212,6 +214,7 @@ def update(rowid):
             start = request.form['date_of_start']
             if datetime.strptime(birth, '%Y-%m-%d').date() > (
                     datetime.strptime(start, '%Y-%m-%d').date() - relativedelta(years=18)):
+                session.pop('_flashes', None)
                 flash('Age can`t be less than 18', 'danger')
                 return render_template('form.html', form=form, title='Update employee')
 
@@ -228,9 +231,11 @@ def update(rowid):
 
             con.commit()
             cur.close()
+            session.pop('_flashes', None)
             flash('Employee was successfully updated', 'success')
             return redirect(url_for('blueprint.home_page'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Update Employee')
         finally:
@@ -338,9 +343,11 @@ def producer():
                 form.zip_code.data, form.phone_number.data))
             con.commit()
             cur.close()
+            session.pop('_flashes', None)
             flash('Producer was successfully added', 'success')
             return redirect(url_for('blueprint.producer'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Add producer')
         finally:
@@ -361,6 +368,7 @@ def employee():
             birth = form.date_of_birth.data
             start = form.date_of_start.data
             if birth > (start - relativedelta(years=18)):
+                session.pop('_flashes', None)
                 flash('Age can`t be less than 18', 'danger')
                 return render_template('form.html', form=form, title='Add employee')
             cur.execute("SELECT ID_EMPLOYEE FROM EMPLOYEE")
@@ -392,9 +400,11 @@ def employee():
             user_manager.db.session.commit()
             db.session.add(user)
             db.session.commit()
+            session.pop('_flashes', None)
             flash('Employee was successfully added', 'success')
             return redirect(url_for('blueprint.employee'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Add Employee')
         finally:
@@ -426,9 +436,11 @@ def product():
                                    VALUES (?, ?, ?, ?);''', (
                 max_id, chosen_fk, form.product_name.data, form.characteristics.data))
             con.commit()
+            session.pop('_flashes', None)
             flash('Product was successfully added', 'success')
             return redirect(url_for('blueprint.product'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Add Product')
         finally:
@@ -461,9 +473,11 @@ def customer():
                 form.street.data, form.zip_code.data, form.percent.data))
             con.commit()
             cur.close()
+            session.pop('_flashes', None)
             flash('Customer Card was successfully added', 'success')
             return redirect(url_for('blueprint.customer'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Add Customer Card')
         finally:
@@ -515,9 +529,11 @@ def store_product():
                                    VALUES (?, ?, ?, ?, ?, ?);''', (form.upc_code.data, form.upc_prom.data, form.product_number.data, form.price.data, form.quantity.data, form.promotional.data))
             con.commit()
             cur.close()
+            session.pop('_flashes', None)
             flash('Store product was successfully added', 'success')
             return redirect(url_for('blueprint.store_product'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Add Store Product')
         finally:
@@ -570,15 +586,75 @@ def consignment():
                 form.price.data))
             con.commit()
             cur.close()
+            session.pop('_flashes', None)
             flash('Consignment was successfully added', 'success')
-            return redirect(url_for('blueprint.store_product'))
+            return redirect(url_for('blueprint.consignment'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Add Consignment')
         finally:
             if (con):
                 con.close()
     return render_template('form.html', form=form, title='Add Consignment')
+
+
+@blueprint.route('/return_contract/', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def return_contract():
+    form = ReturnContractForm()
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute('''SELECT ID_PRODUCER, RPOD_NAME FROM PRODUCER''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
+    form.producer.choices = groups_list
+
+    cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC
+                   FROM EMPLOYEE
+                   WHERE ROLE="manager"''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " "+ i[3]) for i in result]
+    form.employee.choices = groups_list
+
+    cur.execute('''SELECT UPC
+                   FROM STORE_PRODUCT      
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") ") for i in result]
+    form.upc.choices = groups_list
+
+    if form.validate_on_submit():
+        try:
+            con = sql.connect('dbs/zlagoda.db')
+            con.row_factory = sql.Row
+            cur = con.cursor()
+            cur.execute("SELECT CONTRACT_NUMBER FROM RETURN_CONTRACT")
+            result = cur.fetchall()
+            num = random.randint(1, 10000)
+            temp = []
+            for row in result:
+                temp.append(row[0])
+            while temp.__contains__('c' + str(num)):
+                num = random.randint(1, 10000)
+            eid = 'c' + str(num)
+            cur.execute('''INSERT INTO RETURN_CONTRACT(CONTRACT_NUMBER, ID_PRODUCER, ID_EMPLOYEE, UPC, SIGNATURE_DATE, PRODUCT_NUMBER, SUM_TOTAL)
+                                               VALUES (?, ?, ?, ?, ?, ?, ?);''', (
+                eid, form.producer.data, form.employee.data, form.upc.data, form.signature_date.data, form.quantity.data,
+                form.sum.data))
+            con.commit()
+            cur.close()
+            session.pop('_flashes', None)
+            flash('Return contract was successfully added', 'success')
+            return redirect(url_for('blueprint.return_contract'))
+        except sql.Error as error:
+            session.pop('_flashes', None)
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Add Return Contract')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Add Return Contract')
 
 
 @blueprint.route('/admin_queries/', methods=['get', 'post'])

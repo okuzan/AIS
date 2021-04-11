@@ -1,15 +1,12 @@
-from flask import Flask, render_template_string, Blueprint, render_template, request, redirect, url_for, flash
-from flask_user import login_required, roles_required
-from flask_script import Manager, Command, Shell
-from forms import CategoryForm, ProducerForm
-
 import datetime
 import sqlite3 as sql
 
 from flask import Blueprint, render_template, request, redirect, url_for
+from flask import flash
 from flask_user import login_required, roles_required
 
-from models import User, datetime, user_manager, db, Role
+from forms import CategoryForm, ProducerForm
+from models import db, Role
 
 blueprint = Blueprint('blueprint', __name__)
 
@@ -135,7 +132,7 @@ def category():
 
 
 @blueprint.route('/admin_allData/', methods=['get', 'post'])
-@roles_required('Admin')
+@roles_required('Manager')
 def admin_allData():
     try:
         con = sql.connect('dbs/zlagoda.db')
@@ -212,7 +209,7 @@ def admin_allData():
 
 
 @blueprint.route('/producer/', methods=['get', 'post'])
-@roles_required('Admin')  # Use of @roles_required decorator
+@roles_required('Manager')  # Use of @roles_required decorator
 def producer():
     form = ProducerForm()
     if form.validate_on_submit():

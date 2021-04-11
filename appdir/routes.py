@@ -1,23 +1,17 @@
 import datetime
-from sqlite3 import Row
-
-from flask import Flask, render_template_string, Blueprint, render_template, request, redirect, url_for, flash, session
-from flask_user import login_required, roles_required
-from flask_script import Manager, Command, Shell
-from werkzeug.datastructures import MultiDict
-
-from forms import CategoryForm, ProducerForm, EmployeeForm, ProductForm, CustomerForm, StoreProductForm, \
-    ReturnContractForm, ConsignmentForm
 import random
-from dateutil.relativedelta import relativedelta
-
 import sqlite3 as sql
 
+from dateutil.relativedelta import relativedelta
 from flask import Blueprint, render_template, request, redirect, url_for
 from flask import flash
+from flask import session
 from flask_user import login_required, roles_required
 
 from forms import CategoryForm, ProducerForm
+from forms import CheckForm
+from forms import EmployeeForm, ProductForm, CustomerForm, StoreProductForm, \
+    ReturnContractForm, ConsignmentForm
 from models import db, Role
 
 blueprint = Blueprint('blueprint', __name__)
@@ -181,7 +175,7 @@ def delete_page():
     namesProducer = [description[0] for description in cur.description]
     rowsProducer = cur.fetchall()
 
-    return redirect('/admin_allData')
+    return redirect('/admin/data')
 
 
 @roles_required('Manager')
@@ -395,7 +389,6 @@ def employee():
                 email_confirmed_at=datetime.utcnow(),
                 password=user_manager.hash_password(form.password.data),
             )
-            print(form.role.data)
             role_name = "Manager" if form.role.data == 'M' else "Cashier"
             role = Role.query.filter_by(name=role_name).one()
             user.roles.append(role)
@@ -821,6 +814,31 @@ def update_customer(rowid):
     return render_template('form.html', form=form, title='Update Customer Card')
 
 
+@blueprint.route('/form', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def sample_form():
+    form = CheckForm()
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC
+                      FROM EMPLOYEE
+                      WHERE ROLE="manager"''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
+    form.employee.choices = groups_list
+
+    cur.execute('''SELECT CARD_NUMBER, CUST_SURNAME, CUST_NAME, CUST_PATRONYMIC
+                          FROM CUSTOMER_CARD''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
+    form.card.choices = [("", "---")]+groups_list
+    #if form.validate_on_submit():
+    #    if form.flist.data:
+    #        for item in form.flist.data:
+                    # do stuff
+    return render_template('checkForm.html', form=form, title='Create check')
+
+
 @blueprint.route('/cashier_queries/', methods=['get'])
 @roles_required('Cashier')
 def cashier_queries():
@@ -1161,7 +1179,6 @@ def store_product():
             if (con):
                 con.close()
     return render_template('form.html', form=form, title='Add Store Product')
-
 
 @blueprint.route('/consignment/', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator

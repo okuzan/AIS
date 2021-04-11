@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<body>
+
+<h4 class="text-center m-3">{{ tablenameProducer }}</h4>
+<table class="table table-striped">
+    <thead>
+    {% for nameProducer in namesProducer %}
+        <td><strong>{{ nameProducer }}</strong></td>
+    {% endfor %}
+    </thead>
+
+    {% for rowProducer in rowsProducer %}
+        <tr>
+            {% for nameProducer in namesProducer %}
+                <td>{{ rowProducer[nameProducer] }}</td>
+            {% endfor %}
+            <td>
+                <form method=post
+                      action="{{ url_for('blueprint.delete',
+                      rowid=loop.index0,
+                      table=tablenameProducer) }}">
+                    <button>DEL</button>
+                </form>
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+
+<a href="/">Go back to home page</a>
+
+</body>
+</html>

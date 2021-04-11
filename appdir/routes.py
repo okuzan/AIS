@@ -138,7 +138,49 @@ def category():
     return render_template('form.html', form=form, title='Add category')
 
 
-@blueprint.route('/admin_allData/', methods=['get'])
+# @blueprint.route('/delete')
+# def foo():
+#     pin = requests.args.get('id')
+#     print(pin)
+
+@roles_required('Manager')
+@blueprint.route('/<table>/<int:rowid>/delete', methods=['POST'])
+def delete(table, rowid):
+    print(rowid)
+    print(table)
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute("DELETE FROM " + table +
+                " WHERE rowid = "
+                "(" + "SELECT rowid FROM "
+                + table + " LIMIT 1 OFFSET " + (
+                    str(rowid)) + ")"),
+    con.commit()
+    cur.close()
+    return redirect('/delete')
+
+
+@blueprint.route('/delete', methods=['get'])
+@roles_required('Manager')
+def delete_page():
+    con = sql.connect('dbs/zlagoda.db')
+    con.row_factory = sql.Row
+    cur = con.cursor()
+
+    # Data for Producer
+    cur.execute("select * from producer")
+    namesProducer = [description[0] for description in cur.description]
+    rowsProducer = cur.fetchall()
+
+    return redirect('/admin_allData')
+
+
+@blueprint.route("/update", methods=["POST"])
+def update():
+    pass
+
+
+@blueprint.route('/admin_allData', methods=['get'])
 @roles_required('Manager')
 def admin_allData():
     try:
@@ -147,7 +189,7 @@ def admin_allData():
         cur = con.cursor()
 
         # Data for Producer
-        cur.execute("select * from cheque")
+        cur.execute("select * from producer")
         namesProducer = [description[0] for description in cur.description]
         rowsProducer = cur.fetchall()
 
@@ -347,12 +389,14 @@ def customer():
             cur = con.cursor()
             cur.execute("SELECT CARD_NUMBER FROM CUSTOMER_CARD")
             result = cur.fetchall()
-            num = random.randint(1,10000)
-            while(result.__contains__('c'+str(num))):
-                num=random.randint(1,10000)
-            eid = 'c'+str(num)
+            num = random.randint(1, 10000)
+            while (result.__contains__('c' + str(num))):
+                num = random.randint(1, 10000)
+            eid = 'c' + str(num)
             cur.execute('''INSERT INTO CUSTOMER_CARD(CARD_NUMBER, CUST_SURNAME, CUST_NAME, CUST_PATRONYMIC, PHONE_NUMBER, CITY, STREET, ZIP_CODE, PERCENT)
-                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);''', (eid, form.surname.data, form.name.data, form.patronymic.data, form.phone_number.data,  form.city.data, form.street.data, form.zip_code.data, form.percent.data))
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);''', (
+                eid, form.surname.data, form.name.data, form.patronymic.data, form.phone_number.data, form.city.data,
+                form.street.data, form.zip_code.data, form.percent.data))
             con.commit()
             cur.close()
             flash('Customer Card was successfully added', 'success')
@@ -396,32 +440,32 @@ def admin_queries():
     _24Query = 'Скласти список усіх постійних клієнтів, що мають карту клієнта, по полях ПІБ, телефон, адреса (якщо вказана)'
     _25Query = 'Скласти список усіх постійних клієнтів, що мають карту клієнта із певним відсотком'
     _26Query = 'За UPC-товару знайти ціну продажу товару, кількість наявних одиниць товару, назву та характеристики товару'
-    return render_template('admin_queries.html', tablename=tablename,   _1Query=_1Query,
-                                                                        _2Query=_2Query,
-                                                                        _3Query=_3Query,
-                                                                        _4Query=_4Query,
-                                                                        _5Query=_5Query,
-                                                                        _6Query=_6Query,
-                                                                        _7Query=_7Query,
-                                                                        _8Query=_8Query,
-                                                                        _9Query=_9Query,
-                                                                        _10Query=_10Query,
-                                                                        _11Query=_11Query,
-                                                                        _12Query=_12Query,
-                                                                        _13Query=_13Query,
-                                                                        _14Query=_14Query,
-                                                                        _15Query=_15Query,
-                                                                        _16Query=_16Query,
-                                                                        _17Query=_17Query,
-                                                                        _18Query=_18Query,
-                                                                        _19Query=_19Query,
-                                                                        _20Query=_20Query,
-                                                                        _21Query=_21Query,
-                                                                        _22Query=_22Query,
-                                                                        _23Query=_23Query,
-                                                                        _24Query=_24Query,
-                                                                        _25Query=_25Query,
-                                                                        _26Query=_26Query,
+    return render_template('admin_queries.html', tablename=tablename, _1Query=_1Query,
+                           _2Query=_2Query,
+                           _3Query=_3Query,
+                           _4Query=_4Query,
+                           _5Query=_5Query,
+                           _6Query=_6Query,
+                           _7Query=_7Query,
+                           _8Query=_8Query,
+                           _9Query=_9Query,
+                           _10Query=_10Query,
+                           _11Query=_11Query,
+                           _12Query=_12Query,
+                           _13Query=_13Query,
+                           _14Query=_14Query,
+                           _15Query=_15Query,
+                           _16Query=_16Query,
+                           _17Query=_17Query,
+                           _18Query=_18Query,
+                           _19Query=_19Query,
+                           _20Query=_20Query,
+                           _21Query=_21Query,
+                           _22Query=_22Query,
+                           _23Query=_23Query,
+                           _24Query=_24Query,
+                           _25Query=_25Query,
+                           _26Query=_26Query,
                            )
 
 
@@ -527,7 +571,8 @@ def admin_5Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT ID_PRODUCER, RPOD_NAME, PHONE_NUMBER, CITY, STREET, ZIP_CODE FROM PRODUCER WHERE RPOD_NAME='" + name + "'")
+        cur.execute(
+            "SELECT ID_PRODUCER, RPOD_NAME, PHONE_NUMBER, CITY, STREET, ZIP_CODE FROM PRODUCER WHERE RPOD_NAME='" + name + "'")
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -592,7 +637,8 @@ def admin_8Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT * FROM PRODUCT WHERE CATEGORY_NUMBER IN(SELECT CATEGORY_NUMBER FROM CATEGORY WHERE CATEGORY_NAME='" + category_name + "')")
+        cur.execute(
+            "SELECT * FROM PRODUCT WHERE CATEGORY_NUMBER IN(SELECT CATEGORY_NUMBER FROM CATEGORY WHERE CATEGORY_NAME='" + category_name + "')")
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -649,8 +695,8 @@ def admin_10Query():
 @blueprint.route('/11Query', methods=['get', 'post'])
 @roles_required('Manager')
 def admin_11Query():
-    order_by = request.form['11QueryName1'] # quan or name
-    sortType = request.form['11QueryName2'] # ASC or DESC
+    order_by = request.form['11QueryName1']  # quan or name
+    sortType = request.form['11QueryName2']  # ASC or DESC
     tablename = 'Скласти список усіх акційних товарів, відсортованих за кількістю одиниць товару/ за назвою'
     try:
         con = sql.connect('dbs/zlagoda.db')
@@ -671,8 +717,8 @@ def admin_11Query():
 @blueprint.route('/12Query', methods=['get', 'post'])
 @roles_required('Manager')
 def admin_12Query():
-    order_by = request.form['12QueryName1'] # quan or name
-    sortType = request.form['12QueryName2'] # ASC or DESC
+    order_by = request.form['12QueryName1']  # quan or name
+    sortType = request.form['12QueryName2']  # ASC or DESC
     tablename = 'Скласти список усіх не акційних товарів, відсортованих за кількістю одиниць товару/ за назвою'
     try:
         con = sql.connect('dbs/zlagoda.db')
@@ -701,7 +747,9 @@ def admin_13Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT * FROM CONSIGNMENT WHERE UPC IN (SELECT UPC FROM STORE_PRODUCT WHERE ID_PRODUCT={}) AND SIGNATURE_DATE BETWEEN {} AND {}".format(product_id, date_from, date_to))
+        cur.execute(
+            "SELECT * FROM CONSIGNMENT WHERE UPC IN (SELECT UPC FROM STORE_PRODUCT WHERE ID_PRODUCT={}) AND SIGNATURE_DATE BETWEEN {} AND {}".format(
+                product_id, date_from, date_to))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -724,7 +772,10 @@ def admin_14Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT * FROM CONSIGNMENT WHERE ID_PRODUCER={} AND SIGNATURE_DATE BETWEEN {} AND {}} ".format(producer_id, date_from, date_to))
+        cur.execute(
+            "SELECT * FROM CONSIGNMENT WHERE ID_PRODUCER={} AND SIGNATURE_DATE BETWEEN {} AND {}} ".format(producer_id,
+                                                                                                           date_from,
+                                                                                                           date_to))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -769,7 +820,9 @@ def admin_16Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT SUM(PRODUCTS_NUMBER) AS QUANTITY FROM CONSIGNMENT WHERE SIGNATURE_DATE BETWEEN {} AND {}  AND UPC IN(SELECT UPC FROM STORE_PRODUCT WHERE ID_PRODUCT={}) ".format(date_from, date_to, product_id))
+        cur.execute(
+            "SELECT SUM(PRODUCTS_NUMBER) AS QUANTITY FROM CONSIGNMENT WHERE SIGNATURE_DATE BETWEEN {} AND {}  AND UPC IN(SELECT UPC FROM STORE_PRODUCT WHERE ID_PRODUCT={}) ".format(
+                date_from, date_to, product_id))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -792,7 +845,9 @@ def admin_17Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT * FROM RETURN_CONTRACT WHERE SIGNATURE_DATE BETWEEN {} AND {} AND UPC IN (SELECT UPC FROM STORE_PRODUCT WHERE ID_PRODUCT={})".format(date_from, date_to, product_id))
+        cur.execute(
+            "SELECT * FROM RETURN_CONTRACT WHERE SIGNATURE_DATE BETWEEN {} AND {} AND UPC IN (SELECT UPC FROM STORE_PRODUCT WHERE ID_PRODUCT={})".format(
+                date_from, date_to, product_id))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -815,7 +870,10 @@ def admin_18Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT * FROM RETURN_CONTRACT WHERE SIGNATURE_DATE BETWEEN {} AND {} AND ID_PRODUCER={}".format(date_from, date_to, producer_id))
+        cur.execute(
+            "SELECT * FROM RETURN_CONTRACT WHERE SIGNATURE_DATE BETWEEN {} AND {} AND ID_PRODUCER={}".format(date_from,
+                                                                                                             date_to,
+                                                                                                             producer_id))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -860,7 +918,9 @@ def admin_20Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT SUM(PRODUCT_NUMBER) FROM RETURN_CONTRACT WHERE SIGNATURE_DATE BETWEEN {} AND {} AND UPC IN (SELECT UPC FROM STORE_PRODUCT WHERE ID_PRODUCT={})".format(date_from, date_to, product_id))
+        cur.execute(
+            "SELECT SUM(PRODUCT_NUMBER) FROM RETURN_CONTRACT WHERE SIGNATURE_DATE BETWEEN {} AND {} AND UPC IN (SELECT UPC FROM STORE_PRODUCT WHERE ID_PRODUCT={})".format(
+                date_from, date_to, product_id))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -883,7 +943,9 @@ def admin_21Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT CHEQUE.CHECK_NUMBER, ID_EMPLOYEE, CARD_NUMBER, PRINT_DATE, SUM_TOTAL, VAT, SALE.UPC, PRODUCT_NUMBER, SALE.SELLING_PRICE, PRODUCT_NAME FROM CHEQUE INNER JOIN SALE ON CHEQUE.CHECK_NUMBER=SALE.CHECK_NUMBER INNER JOIN STORE_PRODUCT ON SALE.UPC=STORE_PRODUCT.UPC INNER JOIN PRODUCT ON STORE_PRODUCT.ID_PRODUCT=PRODUCT.ID_PRODUCT WHERE PRINT_DATE BETWEEN {} AND {}  AND ID_EMPLOYEE={}".format(date_from, date_to, cashier_id))
+        cur.execute(
+            "SELECT CHEQUE.CHECK_NUMBER, ID_EMPLOYEE, CARD_NUMBER, PRINT_DATE, SUM_TOTAL, VAT, SALE.UPC, PRODUCT_NUMBER, SALE.SELLING_PRICE, PRODUCT_NAME FROM CHEQUE INNER JOIN SALE ON CHEQUE.CHECK_NUMBER=SALE.CHECK_NUMBER INNER JOIN STORE_PRODUCT ON SALE.UPC=STORE_PRODUCT.UPC INNER JOIN PRODUCT ON STORE_PRODUCT.ID_PRODUCT=PRODUCT.ID_PRODUCT WHERE PRINT_DATE BETWEEN {} AND {}  AND ID_EMPLOYEE={}".format(
+                date_from, date_to, cashier_id))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -905,7 +967,9 @@ def admin_22Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT CHEQUE.CHECK_NUMBER, ID_EMPLOYEE, CARD_NUMBER, PRINT_DATE, SUM_TOTAL, VAT, SALE.UPC, PRODUCT_NUMBER, SALE.SELLING_PRICE, PRODUCT_NAME FROM CHEQUE INNER JOIN SALE ON CHEQUE.CHECK_NUMBER=SALE.CHECK_NUMBER INNER JOIN STORE_PRODUCT ON SALE.UPC=STORE_PRODUCT.UPC INNER JOIN PRODUCT ON STORE_PRODUCT.ID_PRODUCT=PRODUCT.ID_PRODUCT WHERE PRINT_DATE BETWEEN {} AND {}".format(date_from, date_to))
+        cur.execute(
+            "SELECT CHEQUE.CHECK_NUMBER, ID_EMPLOYEE, CARD_NUMBER, PRINT_DATE, SUM_TOTAL, VAT, SALE.UPC, PRODUCT_NUMBER, SALE.SELLING_PRICE, PRODUCT_NAME FROM CHEQUE INNER JOIN SALE ON CHEQUE.CHECK_NUMBER=SALE.CHECK_NUMBER INNER JOIN STORE_PRODUCT ON SALE.UPC=STORE_PRODUCT.UPC INNER JOIN PRODUCT ON STORE_PRODUCT.ID_PRODUCT=PRODUCT.ID_PRODUCT WHERE PRINT_DATE BETWEEN {} AND {}".format(
+                date_from, date_to))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -928,7 +992,9 @@ def admin_23Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT SUM(PRODUCT_NUMBER) AS QUANTITY FROM CHEQUE INNER JOIN SALE ON CHEQUE.CHECK_NUMBER=SALE.CHECK_NUMBER INNER JOIN STORE_PRODUCT ON SALE.UPC=STORE_PRODUCT.UPC INNER JOIN PRODUCT ON STORE_PRODUCT.ID_PRODUCT=PRODUCT.ID_PRODUCT WHERE PRINT_DATE BETWEEN {} AND {} AND PRODUCT.ID_PRODUCT={}".format(date_from, date_to, product_id))
+        cur.execute(
+            "SELECT SUM(PRODUCT_NUMBER) AS QUANTITY FROM CHEQUE INNER JOIN SALE ON CHEQUE.CHECK_NUMBER=SALE.CHECK_NUMBER INNER JOIN STORE_PRODUCT ON SALE.UPC=STORE_PRODUCT.UPC INNER JOIN PRODUCT ON STORE_PRODUCT.ID_PRODUCT=PRODUCT.ID_PRODUCT WHERE PRINT_DATE BETWEEN {} AND {} AND PRODUCT.ID_PRODUCT={}".format(
+                date_from, date_to, product_id))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -991,7 +1057,9 @@ def admin_26Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT STORE_PRODUCT.UPC, STORE_PRODUCT.ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PRODUCT_NAME, CHARACTERISTICS FROM STORE_PRODUCT INNER JOIN PRODUCT ON PRODUCT.ID_PRODUCT=STORE_PRODUCT.ID_PRODUCT WHERE UPC={}".format(upc))
+        cur.execute(
+            "SELECT STORE_PRODUCT.UPC, STORE_PRODUCT.ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PRODUCT_NAME, CHARACTERISTICS FROM STORE_PRODUCT INNER JOIN PRODUCT ON PRODUCT.ID_PRODUCT=STORE_PRODUCT.ID_PRODUCT WHERE UPC={}".format(
+                upc))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -1001,4 +1069,3 @@ def admin_26Query():
         if (con):
             con.close()
     return render_template("list.html", rows=rows, tablename=tablename, titles=names)
-

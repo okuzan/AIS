@@ -7,7 +7,8 @@ from flask_user import login_required, roles_required
 from flask_script import Manager, Command, Shell
 from werkzeug.datastructures import MultiDict
 
-from forms import CategoryForm, ProducerForm, EmployeeForm, ProductForm, CustomerForm, StoreProductForm, ReturnContractForm, ConsignmentForm
+from forms import CategoryForm, ProducerForm, EmployeeForm, ProductForm, CustomerForm, StoreProductForm, \
+    ReturnContractForm, ConsignmentForm, CheckForm, SaleForm
 import random
 from dateutil.relativedelta import relativedelta
 
@@ -568,6 +569,31 @@ def update_customer(rowid):
             if (con):
                 con.close()
     return render_template('form.html', form=form, title='Update Customer Card')
+
+
+@blueprint.route('/form', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def sample_form():
+    form = CheckForm()
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC
+                      FROM EMPLOYEE
+                      WHERE ROLE="manager"''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
+    form.employee.choices = groups_list
+
+    cur.execute('''SELECT CARD_NUMBER, CUST_SURNAME, CUST_NAME, CUST_PATRONYMIC
+                          FROM CUSTOMER_CARD''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
+    form.card.choices = [("", "---")]+groups_list
+    #if form.validate_on_submit():
+    #    if form.flist.data:
+    #        for item in form.flist.data:
+                    # do stuff
+    return render_template('checkForm.html', form=form, title='Create check')
 
 
 @blueprint.route('/cashier_queries/', methods=['get'])

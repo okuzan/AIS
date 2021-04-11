@@ -26,3 +26,4 @@ Bootstrap(app)
 
 from routes import blueprint
 app.register_blueprint(blueprint)
+app.config['WTF_CSRF_ENABLED'] = False

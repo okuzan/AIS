@@ -191,13 +191,9 @@ class ReturnContractForm(FlaskForm):
 
 
 class SaleForm(FlaskForm):
-    upc_code = StringField("UPC: ", validators=[DataRequired(message="This field can not be empty"),
-                                                validators.Regexp(r'(^\d{12}$)',
-                                                                  message="Incorrect upc code format, 12 digits expected")])
-
-    sum = StringField("Sum total: ", validators=[DataRequired(message="This field can not be empty"),
-                                                       validators.Regexp(r'(^\d+\.?\d+$)',
-                                                                         message="Incorrect price format")])
+    upc_code = StringField("UPC: ", validators=[DataRequired(message="This field can not be empty")])
+                                                #validators.Regexp(r'(^\d{12}$)',
+                                                 #                 message="Incorrect upc code format, 12 digits expected")])
     quantity = StringField("Quantity: ", validators=[DataRequired(message="This field can not be empty"),
                                                      validators.Regexp(r'^\d+$')])
 
@@ -205,17 +201,6 @@ class SaleForm(FlaskForm):
 class CheckForm(FlaskForm):
     employee = SelectField(u'Employee', coerce=str, validators=[DataRequired()])
     card = SelectField(u'Card', coerce=str)
-
-    sum = StringField("Sum total: ", validators=[DataRequired(message="This field can not be empty"),
-                                                 validators.Regexp(r'(^\d+\.?\d+$)',
-                                                                   message="Incorrect price format")])
-    vat = StringField("Sum total: ", validators=[DataRequired(message="This field can not be empty"),
-                                                 validators.Regexp(r'(^\d+\.?\d+$)',
-                                                                   message="Incorrect vat format")])
-
-    signature_date = DateField('Signature date', format='%Y-%m-%d',
-                               validators=[DataRequired("This field can not be empty")])
-
     sales = FieldList(FormField(SaleForm), min_entries=0)
     submit = SubmitField('Submit')
 

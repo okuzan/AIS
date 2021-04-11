@@ -1,3 +1,4 @@
+import datetime
 from flask import Flask, render_template_string, Blueprint, render_template, request, redirect, url_for, flash
 from flask_user import login_required, roles_required
 from flask_script import Manager, Command, Shell
@@ -5,13 +6,14 @@ from forms import CategoryForm, ProducerForm, EmployeeForm, CustomerForm
 import random
 from dateutil.relativedelta import relativedelta
 
-import datetime
 import sqlite3 as sql
 
 from flask import Blueprint, render_template, request, redirect, url_for
+from flask import flash
 from flask_user import login_required, roles_required
 
-from models import User, datetime, user_manager, db, Role
+from forms import CategoryForm, ProducerForm
+from models import db, Role
 
 blueprint = Blueprint('blueprint', __name__)
 
@@ -260,10 +262,22 @@ def employee():
             while(result.__contains__('e'+str(num))):
                 num=random.randint(1,10000)
             eid = 'e'+str(num)
-            cur.execute('''INSERT INTO EMPLOYEE(ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC, ROLE, SALARY, DATE_OF_BIRTH, DATE_OF_START, PHONE_NUMBER, CITY, STREET, ZIP_CODE, PASSWORD)
-                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''', (eid, form.surname.data, form.name.data, form.patronymic.data, form.role.data, form.salary.data, form.date_of_birth.data, form.date_of_start.data, form.phone_number.data,  form.city.data, form.street.data, form.zip_code.data, user_manager.hash_password(form.password.data)))
+            cur.execute('''INSERT INTO EMPLOYEE(ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC, ROLE, SALARY, DATE_OF_BIRTH, DATE_OF_START, PHONE_NUMBER, CITY, STREET, ZIP_CODE)
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''', (eid, form.surname.data, form.name.data, form.patronymic.data, form.role.data, form.salary.data, form.date_of_birth.data, form.date_of_start.data, form.phone_number.data,  form.city.data, form.street.data, form.zip_code.data))
             con.commit()
             cur.close()
+            user = User(
+                email= eid + "." + form.name.data + "." +form.surname.data +".@db.com",
+                email_confirmed_at=datetime.utcnow(),
+                password=user_manager.hash_password(form.password.data),
+            )
+            print(form.role.data)
+            role_name = "Manager" if form.role.data == 'M' else "Cashier"
+            role = Role.query.filter_by(name=role_name).one()
+            user.roles.append(role)
+            user_manager.db.session.commit()
+            db.session.add(user)
+            db.session.commit()
             flash('Employee was successfully added', 'success')
             return redirect(url_for('blueprint.employee'))
         except sql.Error as error:

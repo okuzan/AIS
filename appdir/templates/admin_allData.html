@@ -54,7 +54,7 @@
     </table>
 
     <br>
-    <form action="/">
+    <form action="/return_contract">
         <button style="float: right; position: absolute" type="submit" class="btn btn-success center">ADD</button>
     </form>
     <h2 class="text-center m-3">{{ tablenameReturn_Contract }}</h2>
@@ -72,7 +72,7 @@
                 {% endfor %}
                 <td>
                     <form method=get
-                          action="{{ url_for('blueprint.update_employee',
+                          action="{{ url_for('blueprint.update_contract',
                       rowid=loop.index,
                       key=namesReturn_Contract[0],
                       table=tablenameReturn_Contract) }}">
@@ -135,7 +135,7 @@
     </table>
 
     <br>
-    <form action="/">
+    <form action="/consignment">
         <button style="float: right; position: absolute" type="submit" class="btn btn-success center">ADD</button>
     </form>
     <h2 class="text-center m-3">{{ tablenameConsignment }}</h2>
@@ -153,10 +153,9 @@
                 {% endfor %}
                 <td>
                     <form method=get
-                          action="{{ url_for('blueprint.update_customer',
+                          action="{{ url_for('blueprint.update_consignment',
                       rowid=loop.index,
-                                            key=namesConsignment[0],
-
+                       key=namesConsignment[0],
                       table=tablenameConsignment) }}">
                         <button>UPD</button>
                     </form>
@@ -276,10 +275,9 @@
                 {% endfor %}
                 <td>
                     <form method=get
-                          action="{{ url_for('blueprint.update_customer',
+                          action="{{ url_for('blueprint.update_product',
                       rowid=loop.index,
-                                            key= namesProduct[0],
-
+                      key= namesProduct[0],
                       table=tablenameProduct) }}">
                         <button>UPD</button>
                     </form>
@@ -318,7 +316,7 @@
                 {% endfor %}
                 <td>
                     <form method=get
-                          action="{{ url_for('blueprint.update_customer',
+                          action="{{ url_for('blueprint.update_category',
                        rowid=loop.index,
                        key= namesCategory[0],
                        table=tablenameCategory) }}">
@@ -340,7 +338,7 @@
         {% endfor %}
     </table>
     <br>
-    <form action="/">
+    <form action="/store_product">
         <button style="float: right; position: absolute" type="submit" class="btn btn-success center">ADD</button>
     </form>
     <h2 class="text-center m-3">{{ tablenameStore_Product }}</h2>
@@ -358,7 +356,7 @@
                 {% endfor %}
                 <td>
                     <form method=get
-                          action="{{ url_for('blueprint.update_customer',
+                          action="{{ url_for('blueprint.update_store_product',
                       rowid=loop.index,
                       key= namesStore_Product[0],
                       table=tablenameStore_Product) }}">

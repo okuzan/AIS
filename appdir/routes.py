@@ -6,7 +6,8 @@ from flask_user import login_required, roles_required
 from flask_script import Manager, Command, Shell
 from werkzeug.datastructures import MultiDict
 
-from forms import CategoryForm, ProducerForm, EmployeeForm, ProductForm, CustomerForm, StoreProductForm, ReturnContractForm, ConsignmentForm
+from forms import CategoryForm, ProducerForm, EmployeeForm, ProductForm, CustomerForm, StoreProductForm, \
+    ReturnContractForm, ConsignmentForm
 import random
 from dateutil.relativedelta import relativedelta
 
@@ -414,7 +415,7 @@ def employee():
     return render_template('form.html', form=form, title='Add Employee')
 
 
-@blueprint.route('/<int:rowid>/producerupdate', methods=['get', 'post'])
+@blueprint.route('/<int:rowid>/update-producer', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator
 def update_producer(rowid):
     con = sql.connect('dbs/zlagoda.db')
@@ -438,7 +439,7 @@ def update_producer(rowid):
              SET CONTRACT_NUMBER = ?, RPOD_NAME = ?,
              COUNTRY = ?,  CITY = ?, STREET = ?, 
              ZIP_CODE = ?, PHONE_NUMBER = ?
-             WHERE ID_PRODUCER = (SELECT ID_PRODUCER FROM CUSTOMER_CARD LIMIT 1 OFFSET ?)''', (
+             WHERE ID_PRODUCER = (SELECT ID_PRODUCER FROM PRODUCER LIMIT 1 OFFSET ?)''', (
                 request.form['contract_number'], request.form['name'],
                 request.form['country'], request.form['city'],
                 request.form['street'], request.form['zip_code'],
@@ -530,6 +531,256 @@ def customer():
     return render_template('form.html', form=form, title='Add Customer Card')
 
 
+@blueprint.route('/<int:rowid>/update-contract', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def update_contract(rowid):
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute("SELECT * FROM RETURN_CONTRACT LIMIT 1 OFFSET " + (str(rowid - 1))),
+    row = cur.fetchall()[0]
+    print(rowid)
+    print(row)
+    form = ReturnContractForm()
+    # form.upc = row[1]
+    # form.producer = row[2]
+    # form.employee = row[3]
+    form.sum.data = str(row[6])
+    form.quantity.data = str(row[5])
+    form.signature_date.data = datetime.strptime(str(row[4]), '%Y-%m-%d')
+
+    cur.execute('''SELECT ID_PRODUCER, RPOD_NAME FROM PRODUCER''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
+    form.producer.choices = groups_list
+
+    cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC
+                   FROM EMPLOYEE
+                   WHERE ROLE="manager"''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
+    form.employee.choices = groups_list
+
+    cur.execute('''SELECT UPC
+                   FROM STORE_PRODUCT      
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") ") for i in result]
+    form.upc.choices = groups_list
+
+    if form.validate_on_submit():
+        try:
+            cur.execute('''UPDATE RETURN_CONTRACT
+             SET ID_PRODUCER = ?, ID_EMPLOYEE = ?, UPC = ?, SIGNATURE_DATE = ?, PRODUCT_NUMBER = ?, SUM_TOTAL = ?
+             WHERE CONTRACT_NUMBER = (SELECT CONTRACT_NUMBER FROM RETURN_CONTRACT LIMIT 1 OFFSET ?)''', (
+                request.form['producer'],
+                request.form['employee'],
+                request.form['upc'],
+                request.form['signature_date'],
+                request.form['quantity'],
+                request.form['sum'],
+                str(rowid - 1)))
+            con.commit()
+            cur.close()
+            flash('Return contract was successfully updated', 'success')
+            return redirect(url_for('blueprint.home_page'))
+        except sql.Error as error:
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Update Return Contract')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Update Return Contract')
+
+
+@blueprint.route('/<int:rowid>/update-consignment', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def update_consignment(rowid):
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute("SELECT * FROM CONSIGNMENT LIMIT 1 OFFSET " + (str(rowid - 1))),
+    row = cur.fetchall()[0]
+    print(rowid)
+    print(row)
+    form = ConsignmentForm()
+    # form.upc = row[1]
+    # form.producer = row[2]
+    # form.employee = row[3]
+    form.signature_date.data = datetime.strptime(str(row[4]), '%Y-%m-%d')
+    form.quantity.data = str(row[5])
+    form.price.data = str(row[6])
+
+    cur.execute('''SELECT ID_PRODUCER, RPOD_NAME FROM PRODUCER''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
+    form.producer.choices = groups_list
+
+    cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC
+                   FROM EMPLOYEE
+                   WHERE ROLE="manager"''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
+    form.employee.choices = groups_list
+
+    cur.execute('''SELECT UPC
+                   FROM STORE_PRODUCT      
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") ") for i in result]
+    form.upc.choices = groups_list
+
+    if form.validate_on_submit():
+        try:
+            cur.execute('''UPDATE CONSIGNMENT
+             SET ID_PRODUCER = ?, ID_EMPLOYEE = ?, UPC = ?, SIGNATURE_DATE = ?, PRODUCTS_NUMBER = ?, PURCHASE_PRICE = ?
+             WHERE CONS_NUMBER = (SELECT CONS_NUMBER FROM CONSIGNMENT LIMIT 1 OFFSET ?)''', (
+                request.form['producer'],
+                request.form['employee'],
+                request.form['upc'],
+                request.form['signature_date'],
+                request.form['quantity'],
+                request.form['price'],
+                str(rowid - 1)))
+            con.commit()
+            cur.close()
+            flash('Consignment was successfully updated', 'success')
+            return redirect(url_for('blueprint.home_page'))
+        except sql.Error as error:
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Update Consignment')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Update Consignment')
+
+
+@blueprint.route('/<int:rowid>/update-category', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def update_category(rowid):
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute("SELECT * FROM CATEGORY LIMIT 1 OFFSET " + (str(rowid - 1))),
+    row = cur.fetchall()[0]
+    form = CategoryForm()
+    form.name.data = row[1]
+    if form.validate_on_submit():
+        try:
+            cur.execute('''UPDATE CATEGORY
+             SET CATEGORY_NAME = ?
+             WHERE CATEGORY_NUMBER = (SELECT CATEGORY_NUMBER FROM CATEGORY LIMIT 1 OFFSET ?)''', (
+                request.form['name'], str(rowid - 1)))
+            con.commit()
+            cur.close()
+            flash('Customer Card was successfully updated', 'success')
+            return redirect(url_for('blueprint.home_page'))
+        except sql.Error as error:
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Update Category')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Update Category')
+
+
+@blueprint.route('/<int:rowid>/update-product', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def update_product(rowid):
+    form = ProductForm()
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute("SELECT * FROM PRODUCT LIMIT 1 OFFSET " + (str(rowid - 1))),
+    row = cur.fetchall()[0]
+    cur.execute("SELECT CATEGORY_NUMBER, CATEGORY_NAME FROM CATEGORY")
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
+    form.category_number.choices = groups_list
+    # form.category_number = row[1]
+    form.product_name.data = row[2]
+    form.characteristics.data = row[2]
+
+    if form.validate_on_submit():
+        try:
+            cur.execute('''UPDATE PRODUCT
+             SET CATEGORY_NUMBER = ?, PRODUCT_NAME = ?, CHARACTERISTICS = ?
+             WHERE ID_PRODUCT = (SELECT ID_PRODUCT FROM PRODUCT LIMIT 1 OFFSET ?)''', (
+                request.form['category_number'],
+                request.form['product_name'],
+                request.form['characteristics'],
+                str(rowid - 1)))
+            con.commit()
+            cur.close()
+            flash('Product was successfully updated', 'success')
+            return redirect(url_for('blueprint.home_page'))
+        except sql.Error as error:
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Update Product')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Update Product')
+
+
+@blueprint.route('/<int:rowid>/update-store-product', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def update_store_product(rowid):
+    form = StoreProductForm()
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute("SELECT * FROM STORE_PRODUCT LIMIT 1 OFFSET " + (str(rowid - 1))),
+    row = cur.fetchall()[0]
+    cur.execute('''SELECT ID_PRODUCT, PRODUCT_NAME FROM PRODUCT
+    WHERE 2>(SELECT COUNT(ID_PRODUCT)
+            FROM STORE_PRODUCT
+            WHERE PRODUCT.ID_PRODUCT=ID_PRODUCT
+    )
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
+    form.product_number.choices = groups_list
+
+    cur.execute('''SELECT UPC
+                   FROM STORE_PRODUCT S
+                   WHERE PROMOTIONAL_PRODUCT=1 AND UPC NOT IN (
+                   SELECT UPC_PROM
+                   FROM STORE_PRODUCT
+                   WHERE UPC_PROM IS NOT NULL
+                   )      
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") ") for i in result]
+    form.upc_prom.choices = groups_list
+
+    # form.category_number = row[1]
+    form.upc_code.data = row[0]
+    form.price.data = str(row[3])
+    form.quantity.data = str(row[4])
+    form.promotional.data = str(row[5])
+
+    if form.is_submitted():
+        try:
+            cur.execute('''UPDATE STORE_PRODUCT
+             SET UPC = ?, UPC_PROM = ?, ID_PRODUCT = ?, SELLING_PRICE = ?,
+              PRODUCTS_NUMBER = ?, PROMOTIONAL_PRODUCT = ? 
+             WHERE UPC = (SELECT UPC FROM STORE_PRODUCT LIMIT 1 OFFSET ?)''', (
+                request.form['upc_code'],
+                request.form['upc_prom'],
+                request.form['product_number'],
+                request.form['price'],
+                request.form['quantity'],
+                request.form['promotional'],
+                str(rowid - 1)))
+            con.commit()
+            cur.close()
+            flash('Store-Product was successfully updated', 'success')
+            return redirect(url_for('blueprint.home_page'))
+        except sql.Error as error:
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Update Store-Product')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Update Store-Product')
+
+
 @blueprint.route('/<int:rowid>/update-customer', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator
 def update_customer(rowid):
@@ -586,16 +837,16 @@ def cashier_queries():
     _10Query = 'За UPC-товару знайти ціну продажу товару, кількість наявних одиниць товару'
     _11Query = 'За ID_працівника знайти всю інформацію про себе'
     return render_template('cashier_queries.html', tablename=tablename, _1Query=_1Query,
-                                                                        _2Query=_2Query,
-                                                                        _3Query=_3Query,
-                                                                        _4Query=_4Query,
-                                                                        _5Query=_5Query,
-                                                                        _6Query=_6Query,
-                                                                        _7Query=_7Query,
-                                                                        _8Query=_8Query,
-                                                                        _9Query=_9Query,
-                                                                        _10Query=_10Query,
-                                                                        _11Query=_11Query)
+                           _2Query=_2Query,
+                           _3Query=_3Query,
+                           _4Query=_4Query,
+                           _5Query=_5Query,
+                           _6Query=_6Query,
+                           _7Query=_7Query,
+                           _8Query=_8Query,
+                           _9Query=_9Query,
+                           _10Query=_10Query,
+                           _11Query=_11Query)
 
 
 @blueprint.route('/1QueryC', methods=['get', 'post'])
@@ -609,7 +860,9 @@ def cashier_1Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT * FROM CHEQUE WHERE PRINT_DATE BETWEEN {} AND {} AND ID_EMPLOYEE={}".format(date_from, date_to, cashier_id))
+        cur.execute(
+            "SELECT * FROM CHEQUE WHERE PRINT_DATE BETWEEN {} AND {} AND ID_EMPLOYEE={}".format(date_from, date_to,
+                                                                                                cashier_id))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -884,14 +1137,17 @@ def store_product():
             con = sql.connect('dbs/zlagoda.db')
             con.row_factory = sql.Row
             cur = con.cursor()
-            if form.upc_prom.data.__len__()<12:
+            if form.upc_prom.data.__len__() < 12:
                 cur.execute('''INSERT INTO STORE_PRODUCT(UPC, ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PROMOTIONAL_PRODUCT)
                                                   VALUES (?, ?, ?, ?, ?);''', (
                     form.upc_code.data, form.product_number.data, form.price.data,
                     form.quantity.data, form.promotional.data))
             else:
                 cur.execute('''INSERT INTO STORE_PRODUCT(UPC, UPC_PROM, ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PROMOTIONAL_PRODUCT)
-                                   VALUES (?, ?, ?, ?, ?, ?);''', (form.upc_code.data, form.upc_prom.data, form.product_number.data, form.price.data, form.quantity.data, form.promotional.data))
+                                   VALUES (?, ?, ?, ?, ?, ?);''', (
+                    form.upc_code.data, form.upc_prom.data, form.product_number.data, form.price.data,
+                    form.quantity.data,
+                    form.promotional.data))
             con.commit()
             cur.close()
             session.pop('_flashes', None)
@@ -905,6 +1161,7 @@ def store_product():
             if (con):
                 con.close()
     return render_template('form.html', form=form, title='Add Store Product')
+
 
 @blueprint.route('/consignment/', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator
@@ -921,7 +1178,7 @@ def consignment():
                    FROM EMPLOYEE
                    WHERE ROLE="manager"''')
     result = cur.fetchall()
-    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " "+ i[3]) for i in result]
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
     form.employee.choices = groups_list
 
     cur.execute('''SELECT UPC
@@ -947,7 +1204,8 @@ def consignment():
             eid = 'c' + str(num)
             cur.execute('''INSERT INTO CONSIGNMENT(CONS_NUMBER, ID_PRODUCER, ID_EMPLOYEE, UPC, SIGNATURE_DATE, PRODUCTS_NUMBER, PURCHASE_PRICE)
                                                VALUES (?, ?, ?, ?, ?, ?, ?);''', (
-                eid, form.producer.data, form.employee.data, form.upc.data, form.signature_date.data, form.quantity.data,
+                eid, form.producer.data, form.employee.data, form.upc.data, form.signature_date.data,
+                form.quantity.data,
                 form.price.data))
             con.commit()
             cur.close()
@@ -979,7 +1237,7 @@ def return_contract():
                    FROM EMPLOYEE
                    WHERE ROLE="manager"''')
     result = cur.fetchall()
-    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " "+ i[3]) for i in result]
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
     form.employee.choices = groups_list
 
     cur.execute('''SELECT UPC
@@ -1005,7 +1263,8 @@ def return_contract():
             eid = 'c' + str(num)
             cur.execute('''INSERT INTO RETURN_CONTRACT(CONTRACT_NUMBER, ID_PRODUCER, ID_EMPLOYEE, UPC, SIGNATURE_DATE, PRODUCT_NUMBER, SUM_TOTAL)
                                                VALUES (?, ?, ?, ?, ?, ?, ?);''', (
-                eid, form.producer.data, form.employee.data, form.upc.data, form.signature_date.data, form.quantity.data,
+                eid, form.producer.data, form.employee.data, form.upc.data, form.signature_date.data,
+                form.quantity.data,
                 form.sum.data))
             con.commit()
             cur.close()
@@ -1052,32 +1311,32 @@ def admin_queries():
     _24Query = 'Скласти список усіх постійних клієнтів, що мають карту клієнта, по полях ПІБ, телефон, адреса (якщо вказана)'
     _25Query = 'Скласти список усіх постійних клієнтів, що мають карту клієнта із певним відсотком'
     _26Query = 'За UPC-товару знайти ціну продажу товару, кількість наявних одиниць товару, назву та характеристики товару'
-    return render_template('admin_queries.html', tablename=tablename,  _1Query=_1Query,
-                                                                       _2Query=_2Query,
-                                                                       _3Query=_3Query,
-                                                                       _4Query=_4Query,
-                                                                       _5Query=_5Query,
-                                                                       _6Query=_6Query,
-                                                                       _7Query=_7Query,
-                                                                       _8Query=_8Query,
-                                                                       _9Query=_9Query,
-                                                                       _10Query=_10Query,
-                                                                       _11Query=_11Query,
-                                                                       _12Query=_12Query,
-                                                                       _13Query=_13Query,
-                                                                       _14Query=_14Query,
-                                                                       _15Query=_15Query,
-                                                                       _16Query=_16Query,
-                                                                       _17Query=_17Query,
-                                                                       _18Query=_18Query,
-                                                                       _19Query=_19Query,
-                                                                       _20Query=_20Query,
-                                                                       _21Query=_21Query,
-                                                                       _22Query=_22Query,
-                                                                       _23Query=_23Query,
-                                                                       _24Query=_24Query,
-                                                                       _25Query=_25Query,
-                                                                       _26Query=_26Query)
+    return render_template('admin_queries.html', tablename=tablename, _1Query=_1Query,
+                           _2Query=_2Query,
+                           _3Query=_3Query,
+                           _4Query=_4Query,
+                           _5Query=_5Query,
+                           _6Query=_6Query,
+                           _7Query=_7Query,
+                           _8Query=_8Query,
+                           _9Query=_9Query,
+                           _10Query=_10Query,
+                           _11Query=_11Query,
+                           _12Query=_12Query,
+                           _13Query=_13Query,
+                           _14Query=_14Query,
+                           _15Query=_15Query,
+                           _16Query=_16Query,
+                           _17Query=_17Query,
+                           _18Query=_18Query,
+                           _19Query=_19Query,
+                           _20Query=_20Query,
+                           _21Query=_21Query,
+                           _22Query=_22Query,
+                           _23Query=_23Query,
+                           _24Query=_24Query,
+                           _25Query=_25Query,
+                           _26Query=_26Query)
 
 
 @blueprint.route('/1Query', methods=['get'])

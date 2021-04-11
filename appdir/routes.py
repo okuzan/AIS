@@ -1,10 +1,12 @@
 import datetime
-from flask import Flask, render_template_string, Blueprint, render_template, request, redirect, url_for, flash
+from sqlite3 import Row
+
+from flask import Flask, render_template_string, Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_user import login_required, roles_required
 from flask_script import Manager, Command, Shell
 from werkzeug.datastructures import MultiDict
 
-from forms import CategoryForm, ProducerForm, EmployeeForm, ProductForm, CustomerForm
+from forms import CategoryForm, ProducerForm, EmployeeForm, ProductForm, CustomerForm, StoreProductForm, ReturnContractForm, ConsignmentForm
 import random
 from dateutil.relativedelta import relativedelta
 
@@ -129,9 +131,11 @@ def category():
                                    VALUES (?, ?);''', (max_id, name))
             con.commit()
             cur.close()
+            session.pop('_flashes', None)
             flash('Category was successfully added', 'success')
             return redirect(url_for('blueprint.category'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash('Name of category must be unique', 'danger')
             return render_template('form.html', form=form, title='Add category')
         finally:
@@ -159,10 +163,6 @@ def delete(table, key, rowid):
                 + "(" + "SELECT " + key + " FROM "
                 + table1 + " LIMIT 1 OFFSET " + (
                     str(rowid)) + ")"),
-    # cur.execute("SELECT * FROM "
-    #             + table1 + " WHERE rowid= " + (str(rowid))),
-
-    # print(cur.fetchall())
     con.commit()
     cur.close()
     return redirect('/admin/data')
@@ -216,6 +216,7 @@ def update_employee(rowid):
             start = request.form['date_of_start']
             if datetime.strptime(birth, '%Y-%m-%d').date() > (
                     datetime.strptime(start, '%Y-%m-%d').date() - relativedelta(years=18)):
+                session.pop('_flashes', None)
                 flash('Age can`t be less than 18', 'danger')
                 return render_template('form.html', form=form, title='Update employee')
 
@@ -232,9 +233,11 @@ def update_employee(rowid):
 
             con.commit()
             cur.close()
+            session.pop('_flashes', None)
             flash('Employee was successfully updated', 'success')
             return redirect(url_for('blueprint.home_page'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Update Employee')
         finally:
@@ -324,7 +327,7 @@ def admin_data():
                            rowsCustomer_Card=rowsCustomer_Card)
 
 
-@blueprint.route('/producer', methods=['get', 'post'])
+@blueprint.route('/producer/', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator
 def producer():
     form = ProducerForm()
@@ -342,9 +345,11 @@ def producer():
                 form.zip_code.data, form.phone_number.data))
             con.commit()
             cur.close()
+            session.pop('_flashes', None)
             flash('Producer was successfully added', 'success')
             return redirect(url_for('blueprint.producer'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Add producer')
         finally:
@@ -363,14 +368,17 @@ def employee():
         try:
             birth = form.date_of_birth.data
             start = form.date_of_start.data
-            if (birth > (start - relativedelta(years=18))):
+            if birth > (start - relativedelta(years=18)):
+                session.pop('_flashes', None)
                 flash('Age can`t be less than 18', 'danger')
                 return render_template('form.html', form=form, title='Add employee')
             cur.execute("SELECT ID_EMPLOYEE FROM EMPLOYEE")
-
             result = cur.fetchall()
             num = random.randint(1, 10000)
-            while (result.__contains__('e' + str(num))):
+            temp = []
+            for row in result:
+                temp.append(row[0])
+            while temp.__contains__('e' + str(num)):
                 num = random.randint(1, 10000)
             eid = 'e' + str(num)
             cur.execute('''INSERT INTO EMPLOYEE(ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC, ROLE, SALARY, DATE_OF_BIRTH, DATE_OF_START, PHONE_NUMBER, CITY, STREET, ZIP_CODE)
@@ -393,9 +401,11 @@ def employee():
             user_manager.db.session.commit()
             db.session.add(user)
             db.session.commit()
+            session.pop('_flashes', None)
             flash('Employee was successfully added', 'success')
             return redirect(url_for('blueprint.employee'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Add Employee')
         finally:
@@ -463,19 +473,18 @@ def product():
             print(value + " @")  # here is the answer you need to parse further
             chosen_fk = s[s.find("(") + 1:s.find(")")]
             print(chosen_fk)  # here is ID (something between '(' ')' )
-            cur.execute("SELECT ID_PRODUCT FROM PRODUCT")
-            result = cur.fetchall()
-            num = random.randint(1, 10000)
-            while (result.__contains__('e' + str(num))):
-                num = random.randint(1, 10000)
-            eid = 'e' + str(num)
+            cur.execute("SELECT MAX(ID_PRODUCT) FROM PRODUCT")
+            result = cur.fetchone()
+            max_id = int(result[0]) + 1
             cur.execute('''INSERT INTO PRODUCT(ID_PRODUCT, CATEGORY_NUMBER, PRODUCT_NAME, CHARACTERISTICS)
                                    VALUES (?, ?, ?, ?);''', (
-                eid, chosen_fk, form.product_name.data, form.characteristics.data))
+                max_id, chosen_fk, form.product_name.data, form.characteristics.data))
             con.commit()
+            session.pop('_flashes', None)
             flash('Product was successfully added', 'success')
             return redirect(url_for('blueprint.product'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Add Product')
         finally:
@@ -484,7 +493,7 @@ def product():
     return render_template('form.html', form=form, title='Add Product')
 
 
-@blueprint.route('/customer', methods=['get', 'post'])
+@blueprint.route('/customer/', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator
 def customer():
     form = CustomerForm()
@@ -496,7 +505,10 @@ def customer():
             cur.execute("SELECT CARD_NUMBER FROM CUSTOMER_CARD")
             result = cur.fetchall()
             num = random.randint(1, 10000)
-            while (result.__contains__('c' + str(num))):
+            temp = []
+            for row in result:
+                temp.append(row[0])
+            while temp.__contains__('c' + str(num)):
                 num = random.randint(1, 10000)
             eid = 'c' + str(num)
             cur.execute('''INSERT INTO CUSTOMER_CARD(CARD_NUMBER, CUST_SURNAME, CUST_NAME, CUST_PATRONYMIC, PHONE_NUMBER, CITY, STREET, ZIP_CODE, PERCENT)
@@ -505,9 +517,11 @@ def customer():
                 form.street.data, form.zip_code.data, form.percent.data))
             con.commit()
             cur.close()
+            session.pop('_flashes', None)
             flash('Customer Card was successfully added', 'success')
-            return redirect(url_for('blueprint.home_page'))
+            return redirect(url_for('blueprint.customer'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Add Customer Card')
         finally:
@@ -556,6 +570,458 @@ def update_customer(rowid):
     return render_template('form.html', form=form, title='Update Customer Card')
 
 
+@blueprint.route('/cashier_queries/', methods=['get'])
+@roles_required('Cashier')
+def cashier_queries():
+    tablename = 'Cashier Queries'
+    _1Query = 'Скласти список чеків,  видрукуваних даним касиром за певний період часу'
+    _2Query = 'За номером чеку вивести усю інформацію про даний чек'
+    _3Query = 'Вивести усю інформацію про покупця з певним прізвищем, що має карту клієнта'
+    _4Query = 'Список усіх постійних клієнтів, що мають карту клієнта з певним відсотком'
+    _5Query = 'Скласти список товарів, що належать певній категорії, відсортованих за назвою'
+    _6Query = 'Скласти список усіх товарів, відсортований за назвою'
+    _7Query = 'Скласти список усіх акційних товарів, відсортованих за кількістю одиниць товару/ за назвою'
+    _8Query = 'Скласти список усіх не акційних товарів, відсортованих за кількістю одиниць товару/ за назвою'
+    _9Query = 'За номером чека скласти список усіх товарів, інформація про продаж яких є у цьому чеку'
+    _10Query = 'За UPC-товару знайти ціну продажу товару, кількість наявних одиниць товару'
+    _11Query = 'За ID_працівника знайти всю інформацію про себе'
+    return render_template('cashier_queries.html', tablename=tablename, _1Query=_1Query,
+                                                                        _2Query=_2Query,
+                                                                        _3Query=_3Query,
+                                                                        _4Query=_4Query,
+                                                                        _5Query=_5Query,
+                                                                        _6Query=_6Query,
+                                                                        _7Query=_7Query,
+                                                                        _8Query=_8Query,
+                                                                        _9Query=_9Query,
+                                                                        _10Query=_10Query,
+                                                                        _11Query=_11Query)
+
+
+@blueprint.route('/1QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_1Query():
+    cashier_id = request.form['1QueryCName1']
+    date_from = request.form['1QueryCName2']
+    date_to = request.form['1QueryCName3']
+    tablename = 'Скласти список чеків,  видрукуваних даним касиром за певний період часу'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute("SELECT * FROM CHEQUE WHERE PRINT_DATE BETWEEN {} AND {} AND ID_EMPLOYEE={}".format(date_from, date_to, cashier_id))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/2QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_2Query():
+    check_number = request.form['2QueryCName']
+    tablename = 'За номером чеку вивести усю інформацію про даний чек'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT CHEQUE.CHECK_NUMBER, ID_EMPLOYEE, CARD_NUMBER, PRINT_DATE, SUM_TOTAL, VAT, 
+                            SALE.UPC,   PRODUCT_NUMBER, SALE.SELLING_PRICE, PRODUCT_NAME
+                      FROM CHEQUE INNER JOIN SALE ON CHEQUE.CHECK_NUMBER=SALE.CHECK_NUMBER
+                      INNER JOIN STORE_PRODUCT ON SALE.UPC=STORE_PRODUCT.UPC
+                      INNER JOIN PRODUCT ON STORE_PRODUCT.ID_PRODUCT=PRODUCT.ID_PRODUCT
+                      WHERE CHEQUE.CHECK_NUMBER={}'''.format(check_number))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/3QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_3Query():
+    surname = request.form['3QueryCName']
+    tablename = 'Вивести усю інформацію про покупця з певним прізвищем, що має карту клієнта'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT *
+                      FROM CUSTOMER_CARD
+                      WHERE CUST_SURNAME=?'''.format(surname))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/4QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_4Query():
+    percent = request.form['4QueryCName']
+    tablename = 'Список усіх постійних клієнтів, що мають карту клієнта з певним відсотком'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute("SELECT * FROM CUSTOMER_CARD WHERE PERCENT={}".format(percent))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/5QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_5Query():
+    category_name = request.form['5QueryCName']
+    tablename = 'Скласти список товарів, що належать певній категорії, відсортованих за назвою'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        toExec = "SELECT * FROM PRODUCT WHERE CATEGORY_NUMBER IN(SELECT CATEGORY_NUMBER FROM CATEGORY WHERE CATEGORY_NAME='" + category_name + "') ORDER BY PRODUCT_NAME "
+        cur.execute(toExec)
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/6QueryC', methods=['get'])
+@roles_required('Cashier')
+def cashier_6Query():
+    tablename = 'Скласти список усіх товарів, відсортований за назвою'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT PRODUCT.ID_PRODUCT, PRODUCT_NAME, CHARACTERISTICS, SELLING_PRICE, PRODUCTS_NUMBER, PROMOTIONAL_PRODUCT
+                              FROM PRODUCT INNER JOIN STORE_PRODUCT ON PRODUCT.ID_PRODUCT=STORE_PRODUCT.ID_PRODUCT
+                              ORDER BY PRODUCT_NAME''')
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/7QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_7Query():
+    order_by = request.form['7QueryCName1']  # quan or name
+    sortType = request.form['7QueryCName2']  # ASC or DESC
+    tablename = 'Скласти список усіх акційних товарів, відсортованих за кількістю одиниць товару/ за назвою'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute("SELECT * FROM STORE_PRODUCT WHERE PROMOTIONAL_PRODUCT=1 ORDER BY {} {}".format(order_by, sortType))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/8QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_8Query():
+    order_by = request.form['8QueryCName1']  # quan or name
+    sortType = request.form['8QueryCName2']  # ASC or DESC
+    tablename = 'Скласти список усіх не акційних товарів, відсортованих за кількістю одиниць товару/ за назвою'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute("SELECT * FROM STORE_PRODUCT WHERE PROMOTIONAL_PRODUCT=0 ORDER BY {} {}".format(order_by, sortType))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/9QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_9Query():
+    check_num = request.form['9QueryCName']
+    tablename = 'За номером чека скласти список усіх товарів, інформація про продаж яких є у цьому чеку'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT PRODUCT_NAME, CHARACTERISTICS, CATEGORY_NAME, SALE.UPC, PRODUCT_NUMBER, SELLING_PRICE
+                      FROM SALE INNER JOIN STORE_PRODUCT ON SALE.UPC=STORE_PRODUCT.UPC
+                      INNER JOIN PRODUCT ON STORE_PRODUCT.ID_PRODUCT=PRODUCT.ID_PRODUCT
+                      INNER JOIN CATEGORY ON PRODUCT.CATEGORY_NUMBER=CATEGORY.CATEGORY_NUMBER
+                      WHERE SALE.CHECK_NUMBER={}'''.format(check_num))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/10QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_10Query():
+    upc = request.form['10QueryCName']
+    tablename = 'За UPC-товару знайти ціну продажу товару, кількість наявних одиниць товару, назву та характеристики товару'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute(
+            "SELECT STORE_PRODUCT.UPC, STORE_PRODUCT.ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PRODUCT_NAME, CHARACTERISTICS FROM STORE_PRODUCT INNER JOIN PRODUCT ON PRODUCT.ID_PRODUCT=STORE_PRODUCT.ID_PRODUCT WHERE UPC={}".format(
+                upc))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/11QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_11Query():
+    id = request.form['11QueryCName']
+    tablename = 'За ID_працівника знайти всю інформацію про себе'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT *
+                      FROM EMPLOYEE 
+                      WHERE ID_EMPLOYEE={}
+                   '''.format(id))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/store_product/', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def store_product():
+    form = StoreProductForm()
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute('''SELECT ID_PRODUCT, PRODUCT_NAME FROM PRODUCT
+    WHERE 2>(SELECT COUNT(ID_PRODUCT)
+            FROM STORE_PRODUCT
+            WHERE PRODUCT.ID_PRODUCT=ID_PRODUCT
+    )
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
+    form.product_number.choices = groups_list
+
+    cur.execute('''SELECT UPC
+                   FROM STORE_PRODUCT S
+                   WHERE PROMOTIONAL_PRODUCT=1 AND UPC NOT IN (
+                   SELECT UPC_PROM
+                   FROM STORE_PRODUCT
+                   WHERE UPC_PROM IS NOT NULL
+                   )      
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") ") for i in result]
+    form.upc_prom.choices = groups_list
+
+    if form.validate_on_submit():
+        try:
+            con = sql.connect('dbs/zlagoda.db')
+            con.row_factory = sql.Row
+            cur = con.cursor()
+            if form.upc_prom.data.__len__()<12:
+                cur.execute('''INSERT INTO STORE_PRODUCT(UPC, ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PROMOTIONAL_PRODUCT)
+                                                  VALUES (?, ?, ?, ?, ?);''', (
+                    form.upc_code.data, form.product_number.data, form.price.data,
+                    form.quantity.data, form.promotional.data))
+            else:
+                cur.execute('''INSERT INTO STORE_PRODUCT(UPC, UPC_PROM, ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PROMOTIONAL_PRODUCT)
+                                   VALUES (?, ?, ?, ?, ?, ?);''', (form.upc_code.data, form.upc_prom.data, form.product_number.data, form.price.data, form.quantity.data, form.promotional.data))
+            con.commit()
+            cur.close()
+            session.pop('_flashes', None)
+            flash('Store product was successfully added', 'success')
+            return redirect(url_for('blueprint.store_product'))
+        except sql.Error as error:
+            session.pop('_flashes', None)
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Add Store Product')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Add Store Product')
+
+@blueprint.route('/consignment/', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def consignment():
+    form = ConsignmentForm()
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute('''SELECT ID_PRODUCER, RPOD_NAME FROM PRODUCER''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
+    form.producer.choices = groups_list
+
+    cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC
+                   FROM EMPLOYEE
+                   WHERE ROLE="manager"''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " "+ i[3]) for i in result]
+    form.employee.choices = groups_list
+
+    cur.execute('''SELECT UPC
+                   FROM STORE_PRODUCT      
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") ") for i in result]
+    form.upc.choices = groups_list
+
+    if form.validate_on_submit():
+        try:
+            con = sql.connect('dbs/zlagoda.db')
+            con.row_factory = sql.Row
+            cur = con.cursor()
+            cur.execute("SELECT CONS_NUMBER FROM CONSIGNMENT")
+            result = cur.fetchall()
+            num = random.randint(1, 10000)
+            temp = []
+            for row in result:
+                temp.append(row[0])
+            while temp.__contains__('c' + str(num)):
+                num = random.randint(1, 10000)
+            eid = 'c' + str(num)
+            cur.execute('''INSERT INTO CONSIGNMENT(CONS_NUMBER, ID_PRODUCER, ID_EMPLOYEE, UPC, SIGNATURE_DATE, PRODUCTS_NUMBER, PURCHASE_PRICE)
+                                               VALUES (?, ?, ?, ?, ?, ?, ?);''', (
+                eid, form.producer.data, form.employee.data, form.upc.data, form.signature_date.data, form.quantity.data,
+                form.price.data))
+            con.commit()
+            cur.close()
+            session.pop('_flashes', None)
+            flash('Consignment was successfully added', 'success')
+            return redirect(url_for('blueprint.consignment'))
+        except sql.Error as error:
+            session.pop('_flashes', None)
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Add Consignment')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Add Consignment')
+
+
+@blueprint.route('/return_contract/', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def return_contract():
+    form = ReturnContractForm()
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute('''SELECT ID_PRODUCER, RPOD_NAME FROM PRODUCER''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
+    form.producer.choices = groups_list
+
+    cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC
+                   FROM EMPLOYEE
+                   WHERE ROLE="manager"''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " "+ i[3]) for i in result]
+    form.employee.choices = groups_list
+
+    cur.execute('''SELECT UPC
+                   FROM STORE_PRODUCT      
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") ") for i in result]
+    form.upc.choices = groups_list
+
+    if form.validate_on_submit():
+        try:
+            con = sql.connect('dbs/zlagoda.db')
+            con.row_factory = sql.Row
+            cur = con.cursor()
+            cur.execute("SELECT CONTRACT_NUMBER FROM RETURN_CONTRACT")
+            result = cur.fetchall()
+            num = random.randint(1, 10000)
+            temp = []
+            for row in result:
+                temp.append(row[0])
+            while temp.__contains__('c' + str(num)):
+                num = random.randint(1, 10000)
+            eid = 'c' + str(num)
+            cur.execute('''INSERT INTO RETURN_CONTRACT(CONTRACT_NUMBER, ID_PRODUCER, ID_EMPLOYEE, UPC, SIGNATURE_DATE, PRODUCT_NUMBER, SUM_TOTAL)
+                                               VALUES (?, ?, ?, ?, ?, ?, ?);''', (
+                eid, form.producer.data, form.employee.data, form.upc.data, form.signature_date.data, form.quantity.data,
+                form.sum.data))
+            con.commit()
+            cur.close()
+            session.pop('_flashes', None)
+            flash('Return contract was successfully added', 'success')
+            return redirect(url_for('blueprint.return_contract'))
+        except sql.Error as error:
+            session.pop('_flashes', None)
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Add Return Contract')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Add Return Contract')
+
+
 @blueprint.route('/admin_queries/', methods=['get', 'post'])
 @roles_required('Manager')
 def admin_queries():
@@ -586,33 +1052,32 @@ def admin_queries():
     _24Query = 'Скласти список усіх постійних клієнтів, що мають карту клієнта, по полях ПІБ, телефон, адреса (якщо вказана)'
     _25Query = 'Скласти список усіх постійних клієнтів, що мають карту клієнта із певним відсотком'
     _26Query = 'За UPC-товару знайти ціну продажу товару, кількість наявних одиниць товару, назву та характеристики товару'
-    return render_template('admin_queries.html', tablename=tablename, _1Query=_1Query,
-                           _2Query=_2Query,
-                           _3Query=_3Query,
-                           _4Query=_4Query,
-                           _5Query=_5Query,
-                           _6Query=_6Query,
-                           _7Query=_7Query,
-                           _8Query=_8Query,
-                           _9Query=_9Query,
-                           _10Query=_10Query,
-                           _11Query=_11Query,
-                           _12Query=_12Query,
-                           _13Query=_13Query,
-                           _14Query=_14Query,
-                           _15Query=_15Query,
-                           _16Query=_16Query,
-                           _17Query=_17Query,
-                           _18Query=_18Query,
-                           _19Query=_19Query,
-                           _20Query=_20Query,
-                           _21Query=_21Query,
-                           _22Query=_22Query,
-                           _23Query=_23Query,
-                           _24Query=_24Query,
-                           _25Query=_25Query,
-                           _26Query=_26Query,
-                           )
+    return render_template('admin_queries.html', tablename=tablename,  _1Query=_1Query,
+                                                                       _2Query=_2Query,
+                                                                       _3Query=_3Query,
+                                                                       _4Query=_4Query,
+                                                                       _5Query=_5Query,
+                                                                       _6Query=_6Query,
+                                                                       _7Query=_7Query,
+                                                                       _8Query=_8Query,
+                                                                       _9Query=_9Query,
+                                                                       _10Query=_10Query,
+                                                                       _11Query=_11Query,
+                                                                       _12Query=_12Query,
+                                                                       _13Query=_13Query,
+                                                                       _14Query=_14Query,
+                                                                       _15Query=_15Query,
+                                                                       _16Query=_16Query,
+                                                                       _17Query=_17Query,
+                                                                       _18Query=_18Query,
+                                                                       _19Query=_19Query,
+                                                                       _20Query=_20Query,
+                                                                       _21Query=_21Query,
+                                                                       _22Query=_22Query,
+                                                                       _23Query=_23Query,
+                                                                       _24Query=_24Query,
+                                                                       _25Query=_25Query,
+                                                                       _26Query=_26Query)
 
 
 @blueprint.route('/1Query', methods=['get'])

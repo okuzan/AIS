@@ -469,7 +469,288 @@ def customer():
     return render_template('form.html', form=form, title='Add Customer Card')
 
 
-@blueprint.route('/admin_queries/', methods=['get', 'post'])
+@blueprint.route('/cashier_queries/', methods=['get'])
+@roles_required('Cashier')
+def cashier_queries():
+    tablename = 'Cashier Queries'
+    _1Query = 'Скласти список чеків,  видрукуваних даним касиром за певний період часу'
+    _2Query = 'За номером чеку вивести усю інформацію про даний чек'
+    _3Query = 'Вивести усю інформацію про покупця з певним прізвищем, що має карту клієнта'
+    _4Query = 'Список усіх постійних клієнтів, що мають карту клієнта з певним відсотком'
+    _5Query = 'Скласти список товарів, що належать певній категорії, відсортованих за назвою'
+    _6Query = 'Скласти список усіх товарів, відсортований за назвою'
+    _7Query = 'Скласти список усіх акційних товарів, відсортованих за кількістю одиниць товару/ за назвою'
+    _8Query = 'Скласти список усіх не акційних товарів, відсортованих за кількістю одиниць товару/ за назвою'
+    _9Query = 'За номером чека скласти список усіх товарів, інформація про продаж яких є у цьому чеку'
+    _10Query = 'За UPC-товару знайти ціну продажу товару, кількість наявних одиниць товару'
+    _11Query = 'За ID_працівника знайти всю інформацію про себе'
+    return render_template('cashier_queries.html', tablename=tablename, _1Query=_1Query,
+                                                                        _2Query=_2Query,
+                                                                        _3Query=_3Query,
+                                                                        _4Query=_4Query,
+                                                                        _5Query=_5Query,
+                                                                        _6Query=_6Query,
+                                                                        _7Query=_7Query,
+                                                                        _8Query=_8Query,
+                                                                        _9Query=_9Query,
+                                                                        _10Query=_10Query,
+                                                                        _11Query=_11Query)
+
+
+@blueprint.route('/1QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_1Query():
+    cashier_id = request.form['1QueryCName1']
+    date_from = request.form['1QueryCName2']
+    date_to = request.form['1QueryCName3']
+    tablename = 'Скласти список чеків,  видрукуваних даним касиром за певний період часу'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute("SELECT * FROM CHEQUE WHERE PRINT_DATE BETWEEN {} AND {} AND ID_EMPLOYEE={}".format(date_from, date_to, cashier_id))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/2QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_2Query():
+    check_number = request.form['2QueryCName']
+    tablename = 'За номером чеку вивести усю інформацію про даний чек'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT CHEQUE.CHECK_NUMBER, ID_EMPLOYEE, CARD_NUMBER, PRINT_DATE, SUM_TOTAL, VAT, 
+                            SALE.UPC,   PRODUCT_NUMBER, SALE.SELLING_PRICE, PRODUCT_NAME
+                      FROM CHEQUE INNER JOIN SALE ON CHEQUE.CHECK_NUMBER=SALE.CHECK_NUMBER
+                      INNER JOIN STORE_PRODUCT ON SALE.UPC=STORE_PRODUCT.UPC
+                      INNER JOIN PRODUCT ON STORE_PRODUCT.ID_PRODUCT=PRODUCT.ID_PRODUCT
+                      WHERE CHEQUE.CHECK_NUMBER={}'''.format(check_number))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/3QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_3Query():
+    surname = request.form['3QueryCName']
+    tablename = 'Вивести усю інформацію про покупця з певним прізвищем, що має карту клієнта'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT *
+                      FROM CUSTOMER_CARD
+                      WHERE CUST_SURNAME=?'''.format(surname))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/4QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_4Query():
+    percent = request.form['4QueryCName']
+    tablename = 'Список усіх постійних клієнтів, що мають карту клієнта з певним відсотком'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute("SELECT * FROM CUSTOMER_CARD WHERE PERCENT={}".format(percent))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/5QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_5Query():
+    category_name = request.form['5QueryCName']
+    tablename = 'Скласти список товарів, що належать певній категорії, відсортованих за назвою'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        toExec = "SELECT * FROM PRODUCT WHERE CATEGORY_NUMBER IN(SELECT CATEGORY_NUMBER FROM CATEGORY WHERE CATEGORY_NAME='" + category_name + "') ORDER BY PRODUCT_NAME "
+        cur.execute(toExec)
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/6QueryC', methods=['get'])
+@roles_required('Cashier')
+def cashier_6Query():
+    tablename = 'Скласти список усіх товарів, відсортований за назвою'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT PRODUCT.ID_PRODUCT, PRODUCT_NAME, CHARACTERISTICS, SELLING_PRICE, PRODUCTS_NUMBER, PROMOTIONAL_PRODUCT
+                              FROM PRODUCT INNER JOIN STORE_PRODUCT ON PRODUCT.ID_PRODUCT=STORE_PRODUCT.ID_PRODUCT
+                              ORDER BY PRODUCT_NAME''')
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/7QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_7Query():
+    order_by = request.form['7QueryCName1']  # quan or name
+    sortType = request.form['7QueryCName2']  # ASC or DESC
+    tablename = 'Скласти список усіх акційних товарів, відсортованих за кількістю одиниць товару/ за назвою'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute("SELECT * FROM STORE_PRODUCT WHERE PROMOTIONAL_PRODUCT=1 ORDER BY {} {}".format(order_by, sortType))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/8QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_8Query():
+    order_by = request.form['8QueryCName1']  # quan or name
+    sortType = request.form['8QueryCName2']  # ASC or DESC
+    tablename = 'Скласти список усіх не акційних товарів, відсортованих за кількістю одиниць товару/ за назвою'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute("SELECT * FROM STORE_PRODUCT WHERE PROMOTIONAL_PRODUCT=0 ORDER BY {} {}".format(order_by, sortType))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/9QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_9Query():
+    check_num = request.form['9QueryCName']
+    tablename = 'За номером чека скласти список усіх товарів, інформація про продаж яких є у цьому чеку'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT PRODUCT_NAME, CHARACTERISTICS, CATEGORY_NAME, SALE.UPC, PRODUCT_NUMBER, SELLING_PRICE
+                      FROM SALE INNER JOIN STORE_PRODUCT ON SALE.UPC=STORE_PRODUCT.UPC
+                      INNER JOIN PRODUCT ON STORE_PRODUCT.ID_PRODUCT=PRODUCT.ID_PRODUCT
+                      INNER JOIN CATEGORY ON PRODUCT.CATEGORY_NUMBER=CATEGORY.CATEGORY_NUMBER
+                      WHERE SALE.CHECK_NUMBER={}'''.format(check_num))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/10QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_10Query():
+    upc = request.form['10QueryCName']
+    tablename = 'За UPC-товару знайти ціну продажу товару, кількість наявних одиниць товару, назву та характеристики товару'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute(
+            "SELECT STORE_PRODUCT.UPC, STORE_PRODUCT.ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PRODUCT_NAME, CHARACTERISTICS FROM STORE_PRODUCT INNER JOIN PRODUCT ON PRODUCT.ID_PRODUCT=STORE_PRODUCT.ID_PRODUCT WHERE UPC={}".format(
+                upc))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/11QueryC', methods=['get', 'post'])
+@roles_required('Cashier')
+def cashier_11Query():
+    id = request.form['11QueryCName']
+    tablename = 'За ID_працівника знайти всю інформацію про себе'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT *
+                      FROM EMPLOYEE 
+                      WHERE ID_EMPLOYEE={}
+                   '''.format(id))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/admin_queries/', methods=['get'])
 @roles_required('Manager')
 def admin_queries():
     tablename = 'Admin Queries'
@@ -499,33 +780,32 @@ def admin_queries():
     _24Query = 'Скласти список усіх постійних клієнтів, що мають карту клієнта, по полях ПІБ, телефон, адреса (якщо вказана)'
     _25Query = 'Скласти список усіх постійних клієнтів, що мають карту клієнта із певним відсотком'
     _26Query = 'За UPC-товару знайти ціну продажу товару, кількість наявних одиниць товару, назву та характеристики товару'
-    return render_template('admin_queries.html', tablename=tablename, _1Query=_1Query,
-                           _2Query=_2Query,
-                           _3Query=_3Query,
-                           _4Query=_4Query,
-                           _5Query=_5Query,
-                           _6Query=_6Query,
-                           _7Query=_7Query,
-                           _8Query=_8Query,
-                           _9Query=_9Query,
-                           _10Query=_10Query,
-                           _11Query=_11Query,
-                           _12Query=_12Query,
-                           _13Query=_13Query,
-                           _14Query=_14Query,
-                           _15Query=_15Query,
-                           _16Query=_16Query,
-                           _17Query=_17Query,
-                           _18Query=_18Query,
-                           _19Query=_19Query,
-                           _20Query=_20Query,
-                           _21Query=_21Query,
-                           _22Query=_22Query,
-                           _23Query=_23Query,
-                           _24Query=_24Query,
-                           _25Query=_25Query,
-                           _26Query=_26Query,
-                           )
+    return render_template('admin_queries.html', tablename=tablename,  _1Query=_1Query,
+                                                                       _2Query=_2Query,
+                                                                       _3Query=_3Query,
+                                                                       _4Query=_4Query,
+                                                                       _5Query=_5Query,
+                                                                       _6Query=_6Query,
+                                                                       _7Query=_7Query,
+                                                                       _8Query=_8Query,
+                                                                       _9Query=_9Query,
+                                                                       _10Query=_10Query,
+                                                                       _11Query=_11Query,
+                                                                       _12Query=_12Query,
+                                                                       _13Query=_13Query,
+                                                                       _14Query=_14Query,
+                                                                       _15Query=_15Query,
+                                                                       _16Query=_16Query,
+                                                                       _17Query=_17Query,
+                                                                       _18Query=_18Query,
+                                                                       _19Query=_19Query,
+                                                                       _20Query=_20Query,
+                                                                       _21Query=_21Query,
+                                                                       _22Query=_22Query,
+                                                                       _23Query=_23Query,
+                                                                       _24Query=_24Query,
+                                                                       _25Query=_25Query,
+                                                                       _26Query=_26Query)
 
 
 @blueprint.route('/1Query', methods=['get'])

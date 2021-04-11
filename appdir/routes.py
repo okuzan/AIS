@@ -246,7 +246,7 @@ def update_employee(rowid):
     return render_template('form.html', form=form, title='Update Employee')
 
 
-@blueprint.route('/admin/data', methods=['get'])
+@blueprint.route('/admin_allData', methods=['get'])
 @roles_required('Manager')
 def admin_data():
     try:

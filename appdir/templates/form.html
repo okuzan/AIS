@@ -2,11 +2,11 @@
 {% import "bootstrap/wtf.html" as wtf %}
 
 {% block content %}
-{#   {% for category, message in get_flashed_messages(with_categories=True) %}#}
-{#       <div class="alert alert-{{ category }}" role="alert">#}
-{#           {{ message}}#}
-{#</div>#}
-{#{% endfor %}#}
+  {% for category, message in get_flashed_messages(with_categories=True) %}
+      <div class="alert alert-{{ category }}" role="alert">
+          {{ message}}
+</div>
+{% endfor %}
 <div class="container">
   <h3>{{ title }}</h3>
   <hr>

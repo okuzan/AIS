@@ -1,10 +1,12 @@
 import datetime
-from flask import Flask, render_template_string, Blueprint, render_template, request, redirect, url_for, flash
+from sqlite3 import Row
+
+from flask import Flask, render_template_string, Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_user import login_required, roles_required
 from flask_script import Manager, Command, Shell
 from werkzeug.datastructures import MultiDict
 
-from forms import CategoryForm, ProducerForm, EmployeeForm, ProductForm, CustomerForm
+from forms import CategoryForm, ProducerForm, EmployeeForm, ProductForm, CustomerForm, StoreProductForm, ReturnContractForm, ConsignmentForm
 import random
 from dateutil.relativedelta import relativedelta
 
@@ -129,9 +131,11 @@ def category():
                                    VALUES (?, ?);''', (max_id, name))
             con.commit()
             cur.close()
+            session.pop('_flashes', None)
             flash('Category was successfully added', 'success')
             return redirect(url_for('blueprint.category'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash('Name of category must be unique', 'danger')
             return render_template('form.html', form=form, title='Add category')
         finally:
@@ -177,14 +181,16 @@ def delete_page():
     return redirect('/admin_allData')
 
 
+@roles_required('Manager')
 @blueprint.route('/<int:rowid>/update', methods=['GET', 'POST'])
 def update(rowid):
+    print(request.form)
     print(rowid)
     con = sql.connect('dbs/zlagoda.db')
     cur = con.cursor()
-    cur.execute("SELECT * FROM EMPLOYEE LIMIT 1 OFFSET " + (str(rowid))),
+    cur.execute("SELECT * FROM EMPLOYEE LIMIT 1 OFFSET " + (str(rowid - 1))),
     row = cur.fetchall()[0]
-    cur.execute("SELECT rowid FROM EMPLOYEE LIMIT 1 OFFSET " + (str(rowid))),
+    cur.execute("SELECT rowid FROM EMPLOYEE LIMIT 1 OFFSET " + (str(rowid - 1))),
     row2 = cur.fetchall()[0]
     print(row2)
     print("rowid!!")
@@ -195,10 +201,8 @@ def update(rowid):
     form.patronymic.data = row[3]
     form.role = row[4]  # careful : select fields don't need 'data'
     form.salary.data = str(row[5])
-    form.date_of_birth.data = datetime(2000, 12, 12)
-    form.date_of_start.data = datetime(2016, 12, 12)
-    # form.date_of_birth.data = datetime.strptime(str(row[6]), '%Y-%m-%d')
-    # form.date_of_start.data = datetime.strptime(str(row[7]), '%Y-%m-%d')
+    form.date_of_birth.data = datetime.strptime(str(row[6]), '%Y-%m-%d')
+    form.date_of_start.data = datetime.strptime(str(row[7]), '%Y-%m-%d')
     form.phone_number.data = str(row[8])
     form.city.data = row[9]
     form.street.data = row[10]
@@ -206,30 +210,32 @@ def update(rowid):
     form.password.data = '.'  # just to pass validation, that won't be assigned
     if form.is_submitted():
         try:
-            print('salary')
-            print(form.salary.gettext)
+            birth = request.form['date_of_birth']
+            start = request.form['date_of_start']
+            if datetime.strptime(birth, '%Y-%m-%d').date() > (
+                    datetime.strptime(start, '%Y-%m-%d').date() - relativedelta(years=18)):
+                session.pop('_flashes', None)
+                flash('Age can`t be less than 18', 'danger')
+                return render_template('form.html', form=form, title='Update employee')
 
-            # birth = form.date_of_birth.data
-            # start = form.date_of_start.data
-            # if (birth > (start - relativedelta(years=18))):
-            #     flash('Age can`t be less than 18', 'danger')
-            #     return render_template('form.html', form=form, title='Update employee')
-
-            values = (form.surname.data, form.name.data, form.patronymic.data, form.role,
-                      form.salary.data,
-                      form.phone_number.data, form.city.data, form.street.data,
-                      form.zip_code.data, (str(rowid)))
+            values = (request.form['surname'], request.form['name'], request.form['patronymic'], request.form['role'],
+                      request.form['salary'], birth, start,
+                      request.form['phone_number'], request.form['city'], request.form['street'],
+                      request.form['zip_code'], (str(rowid)))
+            print(request)
             cur.execute("""UPDATE EMPLOYEE
                         SET EMPL_SURNAME = ?, EMPL_NAME = ?, EMPL_PATRONYMIC = ?, ROLE = ?,
-                        SALARY = ?,
+                        SALARY = ?,DATE_OF_BIRTH = ?, DATE_OF_START = ?,
                         PHONE_NUMBER = ?, CITY = ?, STREET = ?, ZIP_CODE = ?
                         WHERE rowid = (SELECT rowid FROM EMPLOYEE LIMIT 1 OFFSET ?)""", values)
 
             con.commit()
             cur.close()
+            session.pop('_flashes', None)
             flash('Employee was successfully updated', 'success')
             return redirect(url_for('blueprint.home_page'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Update Employee')
         finally:
@@ -238,9 +244,9 @@ def update(rowid):
     return render_template('form.html', form=form, title='Update Employee')
 
 
-@blueprint.route('/admin_allData', methods=['get'])
+@blueprint.route('/admin/data', methods=['get'])
 @roles_required('Manager')
-def admin_allData():
+def admin_data():
     try:
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
@@ -337,9 +343,11 @@ def producer():
                 form.zip_code.data, form.phone_number.data))
             con.commit()
             cur.close()
+            session.pop('_flashes', None)
             flash('Producer was successfully added', 'success')
             return redirect(url_for('blueprint.producer'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Add producer')
         finally:
@@ -359,14 +367,17 @@ def employee():
         try:
             birth = form.date_of_birth.data
             start = form.date_of_start.data
-            if (birth > (start - relativedelta(years=18))):
+            if birth > (start - relativedelta(years=18)):
+                session.pop('_flashes', None)
                 flash('Age can`t be less than 18', 'danger')
                 return render_template('form.html', form=form, title='Add employee')
             cur.execute("SELECT ID_EMPLOYEE FROM EMPLOYEE")
-
             result = cur.fetchall()
             num = random.randint(1, 10000)
-            while (result.__contains__('e' + str(num))):
+            temp = []
+            for row in result:
+                temp.append(row[0])
+            while temp.__contains__('e' + str(num)):
                 num = random.randint(1, 10000)
             eid = 'e' + str(num)
             cur.execute('''INSERT INTO EMPLOYEE(ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC, ROLE, SALARY, DATE_OF_BIRTH, DATE_OF_START, PHONE_NUMBER, CITY, STREET, ZIP_CODE)
@@ -389,9 +400,11 @@ def employee():
             user_manager.db.session.commit()
             db.session.add(user)
             db.session.commit()
+            session.pop('_flashes', None)
             flash('Employee was successfully added', 'success')
             return redirect(url_for('blueprint.employee'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Add Employee')
         finally:
@@ -416,19 +429,18 @@ def product():
             print(value + " @")  # here is the answer you need to parse further
             chosen_fk = s[s.find("(") + 1:s.find(")")]
             print(chosen_fk)  # here is ID (something between '(' ')' )
-            cur.execute("SELECT ID_PRODUCT FROM PRODUCT")
-            result = cur.fetchall()
-            num = random.randint(1, 10000)
-            while (result.__contains__('e' + str(num))):
-                num = random.randint(1, 10000)
-            eid = 'e' + str(num)
+            cur.execute("SELECT MAX(ID_PRODUCT) FROM PRODUCT")
+            result = cur.fetchone()
+            max_id = int(result[0]) + 1
             cur.execute('''INSERT INTO PRODUCT(ID_PRODUCT, CATEGORY_NUMBER, PRODUCT_NAME, CHARACTERISTICS)
                                    VALUES (?, ?, ?, ?);''', (
-                eid, chosen_fk, form.product_name.data, form.characteristics.data))
+                max_id, chosen_fk, form.product_name.data, form.characteristics.data))
             con.commit()
+            session.pop('_flashes', None)
             flash('Product was successfully added', 'success')
             return redirect(url_for('blueprint.product'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Add Product')
         finally:
@@ -449,7 +461,10 @@ def customer():
             cur.execute("SELECT CARD_NUMBER FROM CUSTOMER_CARD")
             result = cur.fetchall()
             num = random.randint(1, 10000)
-            while (result.__contains__('c' + str(num))):
+            temp = []
+            for row in result:
+                temp.append(row[0])
+            while temp.__contains__('c' + str(num)):
                 num = random.randint(1, 10000)
             eid = 'c' + str(num)
             cur.execute('''INSERT INTO CUSTOMER_CARD(CARD_NUMBER, CUST_SURNAME, CUST_NAME, CUST_PATRONYMIC, PHONE_NUMBER, CITY, STREET, ZIP_CODE, PERCENT)
@@ -458,9 +473,11 @@ def customer():
                 form.street.data, form.zip_code.data, form.percent.data))
             con.commit()
             cur.close()
+            session.pop('_flashes', None)
             flash('Customer Card was successfully added', 'success')
-            return redirect(url_for('blueprint.home_page'))
+            return redirect(url_for('blueprint.customer'))
         except sql.Error as error:
+            session.pop('_flashes', None)
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Add Customer Card')
         finally:
@@ -750,7 +767,178 @@ def cashier_11Query():
     return render_template("list.html", rows=rows, tablename=tablename, titles=names)
 
 
-@blueprint.route('/admin_queries/', methods=['get'])
+@blueprint.route('/store_product/', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def store_product():
+    form = StoreProductForm()
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute('''SELECT ID_PRODUCT, PRODUCT_NAME FROM PRODUCT
+    WHERE 2>(SELECT COUNT(ID_PRODUCT)
+            FROM STORE_PRODUCT
+            WHERE PRODUCT.ID_PRODUCT=ID_PRODUCT
+    )
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
+    form.product_number.choices = groups_list
+
+    cur.execute('''SELECT UPC
+                   FROM STORE_PRODUCT S
+                   WHERE PROMOTIONAL_PRODUCT=1 AND UPC NOT IN (
+                   SELECT UPC_PROM
+                   FROM STORE_PRODUCT
+                   WHERE UPC_PROM IS NOT NULL
+                   )      
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") ") for i in result]
+    form.upc_prom.choices = groups_list
+
+    if form.validate_on_submit():
+        try:
+            con = sql.connect('dbs/zlagoda.db')
+            con.row_factory = sql.Row
+            cur = con.cursor()
+            if form.upc_prom.data.__len__()<12:
+                cur.execute('''INSERT INTO STORE_PRODUCT(UPC, ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PROMOTIONAL_PRODUCT)
+                                                  VALUES (?, ?, ?, ?, ?);''', (
+                    form.upc_code.data, form.product_number.data, form.price.data,
+                    form.quantity.data, form.promotional.data))
+            else:
+                cur.execute('''INSERT INTO STORE_PRODUCT(UPC, UPC_PROM, ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PROMOTIONAL_PRODUCT)
+                                   VALUES (?, ?, ?, ?, ?, ?);''', (form.upc_code.data, form.upc_prom.data, form.product_number.data, form.price.data, form.quantity.data, form.promotional.data))
+            con.commit()
+            cur.close()
+            session.pop('_flashes', None)
+            flash('Store product was successfully added', 'success')
+            return redirect(url_for('blueprint.store_product'))
+        except sql.Error as error:
+            session.pop('_flashes', None)
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Add Store Product')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Add Store Product')
+
+@blueprint.route('/consignment/', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def consignment():
+    form = ConsignmentForm()
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute('''SELECT ID_PRODUCER, RPOD_NAME FROM PRODUCER''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
+    form.producer.choices = groups_list
+
+    cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC
+                   FROM EMPLOYEE
+                   WHERE ROLE="manager"''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " "+ i[3]) for i in result]
+    form.employee.choices = groups_list
+
+    cur.execute('''SELECT UPC
+                   FROM STORE_PRODUCT      
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") ") for i in result]
+    form.upc.choices = groups_list
+
+    if form.validate_on_submit():
+        try:
+            con = sql.connect('dbs/zlagoda.db')
+            con.row_factory = sql.Row
+            cur = con.cursor()
+            cur.execute("SELECT CONS_NUMBER FROM CONSIGNMENT")
+            result = cur.fetchall()
+            num = random.randint(1, 10000)
+            temp = []
+            for row in result:
+                temp.append(row[0])
+            while temp.__contains__('c' + str(num)):
+                num = random.randint(1, 10000)
+            eid = 'c' + str(num)
+            cur.execute('''INSERT INTO CONSIGNMENT(CONS_NUMBER, ID_PRODUCER, ID_EMPLOYEE, UPC, SIGNATURE_DATE, PRODUCTS_NUMBER, PURCHASE_PRICE)
+                                               VALUES (?, ?, ?, ?, ?, ?, ?);''', (
+                eid, form.producer.data, form.employee.data, form.upc.data, form.signature_date.data, form.quantity.data,
+                form.price.data))
+            con.commit()
+            cur.close()
+            session.pop('_flashes', None)
+            flash('Consignment was successfully added', 'success')
+            return redirect(url_for('blueprint.consignment'))
+        except sql.Error as error:
+            session.pop('_flashes', None)
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Add Consignment')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Add Consignment')
+
+
+@blueprint.route('/return_contract/', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def return_contract():
+    form = ReturnContractForm()
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute('''SELECT ID_PRODUCER, RPOD_NAME FROM PRODUCER''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
+    form.producer.choices = groups_list
+
+    cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC
+                   FROM EMPLOYEE
+                   WHERE ROLE="manager"''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " "+ i[3]) for i in result]
+    form.employee.choices = groups_list
+
+    cur.execute('''SELECT UPC
+                   FROM STORE_PRODUCT      
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") ") for i in result]
+    form.upc.choices = groups_list
+
+    if form.validate_on_submit():
+        try:
+            con = sql.connect('dbs/zlagoda.db')
+            con.row_factory = sql.Row
+            cur = con.cursor()
+            cur.execute("SELECT CONTRACT_NUMBER FROM RETURN_CONTRACT")
+            result = cur.fetchall()
+            num = random.randint(1, 10000)
+            temp = []
+            for row in result:
+                temp.append(row[0])
+            while temp.__contains__('c' + str(num)):
+                num = random.randint(1, 10000)
+            eid = 'c' + str(num)
+            cur.execute('''INSERT INTO RETURN_CONTRACT(CONTRACT_NUMBER, ID_PRODUCER, ID_EMPLOYEE, UPC, SIGNATURE_DATE, PRODUCT_NUMBER, SUM_TOTAL)
+                                               VALUES (?, ?, ?, ?, ?, ?, ?);''', (
+                eid, form.producer.data, form.employee.data, form.upc.data, form.signature_date.data, form.quantity.data,
+                form.sum.data))
+            con.commit()
+            cur.close()
+            session.pop('_flashes', None)
+            flash('Return contract was successfully added', 'success')
+            return redirect(url_for('blueprint.return_contract'))
+        except sql.Error as error:
+            session.pop('_flashes', None)
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Add Return Contract')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Add Return Contract')
+
+
+@blueprint.route('/admin_queries/', methods=['get', 'post'])
 @roles_required('Manager')
 def admin_queries():
     tablename = 'Admin Queries'

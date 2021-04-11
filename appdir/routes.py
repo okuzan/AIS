@@ -2,6 +2,7 @@ import datetime
 from sqlite3 import Row
 
 from flask import Flask, render_template_string, Blueprint, render_template, request, redirect, url_for, flash, session
+from flask_login import current_user
 from flask_user import login_required, roles_required
 from flask_script import Manager, Command, Shell
 from werkzeug.datastructures import MultiDict
@@ -178,7 +179,7 @@ def delete_page():
     namesProducer = [description[0] for description in cur.description]
     rowsProducer = cur.fetchall()
 
-    return redirect('/admin_allData')
+    return redirect('/admin/data')
 
 
 @roles_required('Manager')
@@ -393,7 +394,6 @@ def employee():
                 email_confirmed_at=datetime.utcnow(),
                 password=user_manager.hash_password(form.password.data),
             )
-            print(form.role.data)
             role_name = "Manager" if form.role.data == 'M' else "Cashier"
             role = Role.query.filter_by(name=role_name).one()
             user.roles.append(role)
@@ -544,6 +544,7 @@ def store_product():
 @blueprint.route('/consignment/', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator
 def consignment():
+    print(current_user.id)
     form = ConsignmentForm()
     con = sql.connect('dbs/zlagoda.db')
     cur = con.cursor()

@@ -1,6 +1,7 @@
 from flask_admin.form import DatePickerWidget
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, TextAreaField, validators, PasswordField, SelectField, widgets
+from wtforms import StringField, SubmitField, TextAreaField, validators, PasswordField, SelectField, widgets, FieldList, \
+    FormField
 from wtforms.validators import DataRequired, Email
 from wtforms.fields.html5 import DateField
 
@@ -187,3 +188,34 @@ class ReturnContractForm(FlaskForm):
                               validators=[DataRequired("This field can not be empty")])
 
     submit = SubmitField("Submit")
+
+
+class SaleForm(FlaskForm):
+    upc_code = StringField("UPC: ", validators=[DataRequired(message="This field can not be empty"),
+                                                validators.Regexp(r'(^\d{12}$)',
+                                                                  message="Incorrect upc code format, 12 digits expected")])
+
+    sum = StringField("Sum total: ", validators=[DataRequired(message="This field can not be empty"),
+                                                       validators.Regexp(r'(^\d+\.?\d+$)',
+                                                                         message="Incorrect price format")])
+    quantity = StringField("Quantity: ", validators=[DataRequired(message="This field can not be empty"),
+                                                     validators.Regexp(r'^\d+$')])
+
+
+class CheckForm(FlaskForm):
+    employee = SelectField(u'Employee', coerce=str, validators=[DataRequired()])
+    card = SelectField(u'Card', coerce=str, validators=[DataRequired()])
+
+    sum = StringField("Sum total: ", validators=[DataRequired(message="This field can not be empty"),
+                                                 validators.Regexp(r'(^\d+\.?\d+$)',
+                                                                   message="Incorrect price format")])
+    vat = StringField("Sum total: ", validators=[DataRequired(message="This field can not be empty"),
+                                                 validators.Regexp(r'(^\d+\.?\d+$)',
+                                                                   message="Incorrect vat format")])
+
+    signature_date = DateField('Signature date', format='%Y-%m-%d',
+                               validators=[DataRequired("This field can not be empty")])
+
+    sales = FieldList(FormField(SaleForm), min_entries=1)
+
+

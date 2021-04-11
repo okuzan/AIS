@@ -729,7 +729,6 @@ def update_store_product(rowid):
     result = cur.fetchall()
     groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
     form.product_number.choices = groups_list
-
     cur.execute('''SELECT UPC
                    FROM STORE_PRODUCT S
                    WHERE PROMOTIONAL_PRODUCT=1 AND UPC NOT IN (
@@ -739,8 +738,8 @@ def update_store_product(rowid):
                    )      
     ''')
     result = cur.fetchall()
-    groups_list = [(i[0], "(" + str(i[0]) + ") ") for i in result]
-    form.upc_prom.choices = groups_list
+    groups_list = [(i[0], "(" + i[0] + ") ") for i in result]
+    form.upc_prom.choices = [('-1','---')]+groups_list
 
     # form.category_number = row[1]
     form.upc_code.data = row[0]
@@ -750,17 +749,31 @@ def update_store_product(rowid):
 
     if form.is_submitted():
         try:
-            cur.execute('''UPDATE STORE_PRODUCT
-             SET UPC = ?, UPC_PROM = ?, ID_PRODUCT = ?, SELLING_PRICE = ?,
-              PRODUCTS_NUMBER = ?, PROMOTIONAL_PRODUCT = ? 
-             WHERE UPC = (SELECT UPC FROM STORE_PRODUCT LIMIT 1 OFFSET ?)''', (
-                request.form['upc_code'],
-                request.form['upc_prom'],
-                request.form['product_number'],
-                request.form['price'],
-                request.form['quantity'],
-                request.form['promotional'],
-                str(rowid - 1)))
+            if form.upc_prom.data.__len__() < 12:
+                cur.execute('''UPDATE STORE_PRODUCT
+                                            SET UPC = ?, UPC_PROM = NULL, ID_PRODUCT = ?, SELLING_PRICE = ?,
+                                             PRODUCTS_NUMBER = ?, PROMOTIONAL_PRODUCT = ? 
+                                            WHERE UPC = (SELECT UPC FROM STORE_PRODUCT LIMIT 1 OFFSET ?)''', (
+                    request.form['upc_code'],
+                    request.form['product_number'],
+                    request.form['price'],
+                    request.form['quantity'],
+                    request.form['promotional'],
+                    str(rowid - 1)))
+            else:
+                cur.execute('''UPDATE STORE_PRODUCT
+                             SET UPC = ?, UPC_PROM = ?, ID_PRODUCT = ?, SELLING_PRICE = ?,
+                              PRODUCTS_NUMBER = ?, PROMOTIONAL_PRODUCT = ? 
+                             WHERE UPC = (SELECT UPC FROM STORE_PRODUCT LIMIT 1 OFFSET ?)''', (
+                    request.form['upc_code'],
+                    request.form['upc_prom'],
+                    request.form['product_number'],
+                    request.form['price'],
+                    request.form['quantity'],
+                    request.form['promotional'],
+                    str(rowid - 1)))
+
+
             con.commit()
             cur.close()
             flash('Store-Product was successfully updated', 'success')

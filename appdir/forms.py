@@ -132,10 +132,10 @@ class ProductForm(FlaskForm):
 
 
 class StoreProductForm(FlaskForm):
-    upc_code = StringField("UPC: ", validators=[DataRequired(message="This field can not be empty"),
-                                                     validators.Regexp(r'(^\d{12}$)',
-                                                                       message="Incorrect upc code format, 12 digits expected")])
-    upc_prom = SelectField(u'UPC promotional: ', coerce=int)
+    upc_code = StringField("UPC: ", validators=[DataRequired(message="This field can not be empty")])
+                                                     #validators.Regexp(r'(^\d{12}$)',
+                                                      #                 message="Incorrect upc code format, 12 digits expected")])
+    upc_prom = SelectField(u'UPC promotional: ', coerce=str)
     product_number = SelectField(u'Product: ', coerce=int, validators=[DataRequired()])
 
     price = StringField("Selling price: ", validators=[DataRequired(message="This field can not be empty"),

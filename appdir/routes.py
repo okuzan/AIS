@@ -6,7 +6,7 @@ from flask_user import login_required, roles_required
 from flask_script import Manager, Command, Shell
 from werkzeug.datastructures import MultiDict
 
-from forms import CategoryForm, ProducerForm, EmployeeForm, ProductForm, CustomerForm
+from forms import CategoryForm, ProducerForm, EmployeeForm, ProductForm, CustomerForm, StoreProductForm, ReturnContractForm, ConsignmentForm
 import random
 from dateutil.relativedelta import relativedelta
 
@@ -419,18 +419,12 @@ def product():
             print(value + " @")  # here is the answer you need to parse further
             chosen_fk = s[s.find("(") + 1:s.find(")")]
             print(chosen_fk)  # here is ID (something between '(' ')' )
-            cur.execute("SELECT ID_PRODUCT FROM PRODUCT")
-            result = cur.fetchall()
-            num = random.randint(1, 10000)
-            temp = []
-            for row in result:
-                temp.append(row[0])
-            while temp.__contains__('e' + str(num)):
-                num = random.randint(1, 10000)
-            eid = 'e' + str(num)
+            cur.execute("SELECT MAX(ID_PRODUCT) FROM PRODUCT")
+            result = cur.fetchone()
+            max_id = int(result[0]) + 1
             cur.execute('''INSERT INTO PRODUCT(ID_PRODUCT, CATEGORY_NUMBER, PRODUCT_NAME, CHARACTERISTICS)
                                    VALUES (?, ?, ?, ?);''', (
-                eid, chosen_fk, form.product_name.data, form.characteristics.data))
+                max_id, chosen_fk, form.product_name.data, form.characteristics.data))
             con.commit()
             flash('Product was successfully added', 'success')
             return redirect(url_for('blueprint.product'))
@@ -476,6 +470,61 @@ def customer():
             if (con):
                 con.close()
     return render_template('form.html', form=form, title='Add Customer Card')
+
+
+@blueprint.route('/store_product/', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def store_product():
+    form = StoreProductForm()
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute('''SELECT ID_PRODUCT, PRODUCT_NAME FROM PRODUCT
+    WHERE 2>(SELECT COUNT(ID_PRODUCT)
+            FROM STORE_PRODUCT
+            WHERE PRODUCT.ID_PRODUCT=ID_PRODUCT
+    )
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
+    form.product_number.choices = groups_list
+
+    cur.execute('''SELECT UPC
+                   FROM STORE_PRODUCT S
+                   WHERE PROMOTIONAL_PRODUCT=1 AND UPC NOT IN (
+                   SELECT UPC_PROM
+                   FROM STORE_PRODUCT
+                   WHERE UPC_PROM IS NOT NULL
+                   )      
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") ") for i in result]
+    form.upc_prom.choices = groups_list
+
+    if form.validate_on_submit():
+        #upc_prom + id_product
+        try:
+            con = sql.connect('dbs/zlagoda.db')
+            con.row_factory = sql.Row
+            cur = con.cursor()
+            if form.upc_prom.data.__len__()<12:
+                cur.execute('''INSERT INTO STORE_PRODUCT(UPC, ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PROMOTIONAL_PRODUCT)
+                                                  VALUES (?, ?, ?, ?, ?);''', (
+                    form.upc_code.data, form.product_number.data, form.price.data,
+                    form.quantity.data, form.promotional.data))
+            else:
+                cur.execute('''INSERT INTO STORE_PRODUCT(UPC, UPC_PROM, ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PROMOTIONAL_PRODUCT)
+                                   VALUES (?, ?, ?, ?, ?, ?);''', (form.upc_code.data, form.upc_prom.data, form.product_number.data, form.price.data, form.quantity.data, form.promotional.data))
+            con.commit()
+            cur.close()
+            flash('Store product was successfully added', 'success')
+            return redirect(url_for('blueprint.store_product'))
+        except sql.Error as error:
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Add Store Product')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Add Store Product')
 
 
 @blueprint.route('/admin_queries/', methods=['get', 'post'])

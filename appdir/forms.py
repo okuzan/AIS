@@ -118,7 +118,7 @@ class CustomerForm(FlaskForm):
 
 
 class ProductForm(FlaskForm):
-    category_number = SelectField(u'Category number', coerce=int, validators=[DataRequired()])
+    category_number = SelectField(u'Category', coerce=int, validators=[DataRequired()])
     product_name = StringField("Product name: ", validators=[DataRequired(message="This field can not be empty"),
                                                              validators.Length(max=50,
                                                                                message="Product name can not contain more than 50 symbols")])
@@ -126,5 +126,64 @@ class ProductForm(FlaskForm):
     characteristics = StringField("Characteristics: ", validators=[DataRequired(message="This field can not be empty"),
                                                                    validators.Length(max=100,
                                                                                      message="Producer name can not contain more than 100 symbols")])
+
+    submit = SubmitField("Submit")
+
+
+class StoreProductForm(FlaskForm):
+    upc_code = StringField("UPC: ", validators=[DataRequired(message="This field can not be empty"),
+                                                     validators.Regexp(r'(^\d{12}$)',
+                                                                       message="Incorrect upc code format, 12 digits expected")])
+    upc_prom = SelectField(u'UPC promotional: ', coerce=str)
+    product_number = SelectField(u'Product: ', coerce=int, validators=[DataRequired()])
+
+    price = StringField("Selling price: ", validators=[DataRequired(message="This field can not be empty"),
+                                                 validators.Regexp(r'(^\d+\.?\d+$)',
+                                                                   message="Incorrect price format")])
+    quantity = StringField("Quantity: ", validators=[DataRequired(message="This field can not be empty"),
+                                                   validators.Regexp(r'^\d+$')])
+
+    promotional = SelectField('Promotional', choices=[(1, 'True'), (0, 'False')])
+
+    submit = SubmitField("Submit")
+
+
+class ConsignmentForm(FlaskForm):
+
+    upc = SelectField(u'UPC: ', coerce=str, validators=[DataRequired()])
+
+    producer = SelectField(u'Producer', coerce=str, validators=[DataRequired()])
+
+    employee = SelectField(u'Employee', coerce=str, validators=[DataRequired()])
+
+    price = StringField("Selling price: ", validators=[DataRequired(message="This field can not be empty"),
+                                                       validators.Regexp(r'(^\d+\.?\d+$)',
+                                                                         message="Incorrect price format")])
+
+    quantity = StringField("Quantity: ", validators=[DataRequired(message="This field can not be empty"),
+                                                     validators.Regexp(r'^\d+$')])
+
+    signature_date = DateField('Signature date', format='%Y-%m-%d',
+                              validators=[DataRequired("This field can not be empty")])
+
+    submit = SubmitField("Submit")
+
+
+class ReturnContractForm(FlaskForm):
+
+    upc = SelectField(u'UPC: ', coerce=str, validators=[DataRequired()])
+
+    producer = SelectField(u'Producer', coerce=str, validators=[DataRequired()])
+
+    employee = SelectField(u'Employee', coerce=str, validators=[DataRequired()])
+
+    sum = StringField("Sum total: ", validators=[DataRequired(message="This field can not be empty"),
+                                                       validators.Regexp(r'(^\d+\.?\d+$)',
+                                                                         message="Incorrect price format")])
+    quantity = StringField("Quantity: ", validators=[DataRequired(message="This field can not be empty"),
+                                                     validators.Regexp(r'^\d+$')])
+
+    signature_date = DateField('Signature date', format='%Y-%m-%d',
+                              validators=[DataRequired("This field can not be empty")])
 
     submit = SubmitField("Submit")

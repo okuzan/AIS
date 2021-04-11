@@ -154,3 +154,4 @@ cython_debug/
 
 .idea/
 basis_app.sqlite
+dbs/zlagoda.db

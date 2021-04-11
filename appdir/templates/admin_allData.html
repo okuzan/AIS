@@ -1,9 +1,25 @@
-{% extends "base.html" %}
-{% block content %}
+<style type="text/css">
+    .center {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-left: 10px;
+        margin-bottom: 10px;
+        border: 2px solid green;
+    }
 
-    <h4 class="text-center m-3">{{ tablenameProducer }}</h4>
+</style>
+{% extends "base.html" %}
+
+{% block content %}
+    <br>
+    <form action="/producer">
+        <button style="float: right; position: absolute" type="submit" class="btn btn-success center">ADD</button>
+    </form>
+    <h2 class="text-center m-3">{{ tablenameProducer }}</h2>
     <table class="table table-striped">
         <thead>
+
         {% for nameProducer in namesProducer %}
             <td><strong>{{ nameProducer }}</strong></td>
         {% endfor %}
@@ -15,19 +31,21 @@
                     <td>{{ rowProducer[nameProducer] }}</td>
                 {% endfor %}
                 <td>
-                    <form method=post
-                          action="{{ url_for('blueprint.delete',
-                      rowid=loop.index0,
+                    <form method=get
+                          action="{{ url_for('blueprint.update_producer',
+                      rowid=loop.index,
+                      key=namesProducer[0],
                       table=tablenameProducer) }}">
-                        <button>DEL</button>
+                        <button type="submit" class="btn btn-outline-dark">UPD</button>
                     </form>
                 </td>
                 <td>
                     <form method=post
-                          action="{{ url_for('blueprint.update',
-                      rowid=loop.index,
+                          action="{{ url_for('blueprint.delete',
+                      rowid=loop.index0,
+                      key=namesProducer[0],
                       table=tablenameProducer) }}">
-                        <button>UPD</button>
+                        <button type="submit" class="btn btn-danger">DEL</button>
                     </form>
                 </td>
 
@@ -35,7 +53,11 @@
         {% endfor %}
     </table>
 
-    <h4 class="text-center m-3">{{ tablenameReturn_Contract }}</h4>
+    <br>
+    <form action="/">
+        <button style="float: right; position: absolute" type="submit" class="btn btn-success center">ADD</button>
+    </form>
+    <h2 class="text-center m-3">{{ tablenameReturn_Contract }}</h2>
     <table class="table table-striped">
         <thead>
         {% for nameReturn_Contract in namesReturn_Contract %}
@@ -47,26 +69,35 @@
             <tr>
                 {% for nameReturn_Contract in namesReturn_Contract %}
                     <td>{{ rowReturn_Contract[nameReturn_Contract] }}</td>
-{#                    <td>#}
-{#                                                <form method="POST" action="./update">#}
-{#                                                    <input type="hidden" value="{{ rowReturn_Contract[nameReturn_Contract] }}"#}
-{#                                                           name="beforename">#}
-{#                                                    <input type="text" value="{{ rowReturn_Contract[nameReturn_Contract] }}" name="updatedname">#}
-{#                                                    <input type="submit" value=">" style="float: right">#}
-                        {#                        </form>#}
-{#                                                <form method="POST" action="{{ url_for('blueprint.update') }}">#}
-                        {#                            <input type="hidden" name="id" value="1">#}
-                        {#                            <input type="text" name="name" placeholder="Enter new name">#}
-                        {#                        </form>#}
-
-{#                    </td>#}
                 {% endfor %}
+                <td>
+                    <form method=get
+                          action="{{ url_for('blueprint.update_employee',
+                      rowid=loop.index,
+                      key=namesReturn_Contract[0],
+                      table=tablenameReturn_Contract) }}">
+                        <button>UPD</button>
+                    </form>
+                </td>
+                <td>
+                    <form method=post
+                          action="{{ url_for('blueprint.delete',
+                      rowid=loop.index0,
+                      key=namesReturn_Contract[0],
+                      table=tablenameReturn_Contract) }}">
+                        <button type="submit" class="btn btn-danger">DEL</button>
+                    </form>
+                </td>
 
             </tr>
         {% endfor %}
     </table>
 
-    <h4 class="text-center m-3">{{ tablenameEmployee }}</h4>
+    <br>
+    <form action="/employee">
+        <button style="float: right; position: absolute" type="submit" class="btn btn-success center">ADD</button>
+    </form>
+    <h2 class="text-center m-3">{{ tablenameEmployee }}</h2>
     <table class="table table-striped">
         <thead>
         {% for nameEmployee in namesEmployee %}
@@ -81,17 +112,33 @@
                 {% endfor %}
                 <td>
                     <form method=get
-                          action="{{ url_for('blueprint.update',
+                          action="{{ url_for('blueprint.update_employee',
                       rowid=loop.index,
+                                            key=namesEmployee[0],
+
                       table=tablenameEmployee) }}">
                         <button>UPD</button>
                     </form>
                 </td>
+                <td>
+                    <form method=post
+                          action="{{ url_for('blueprint.delete',
+                      rowid=loop.index0,
+                      key=namesEmployee[0],
+                      table=tablenameEmployee) }}">
+                        <button type="submit" class="btn btn-danger">DEL</button>
+                    </form>
+                </td>
+
             </tr>
         {% endfor %}
     </table>
 
-    <h4 class="text-center m-3">{{ tablenameConsignment }}</h4>
+    <br>
+    <form action="/">
+        <button style="float: right; position: absolute" type="submit" class="btn btn-success center">ADD</button>
+    </form>
+    <h2 class="text-center m-3">{{ tablenameConsignment }}</h2>
     <table class="table table-striped">
         <thead>
         {% for nameConsignment in namesConsignment %}
@@ -104,11 +151,34 @@
                 {% for nameConsignment in namesConsignment %}
                     <td>{{ rowConsignment[nameConsignment] }}</td>
                 {% endfor %}
+                <td>
+                    <form method=get
+                          action="{{ url_for('blueprint.update_customer',
+                      rowid=loop.index,
+                                            key=namesConsignment[0],
+
+                      table=tablenameConsignment) }}">
+                        <button>UPD</button>
+                    </form>
+                </td>
+
+                <td>
+                    <form method=post
+                          action="{{ url_for('blueprint.delete',
+                      rowid=loop.index0,
+                      key=namesConsignment[0],
+                      table=tablenameConsignment) }}">
+                        <button type="submit" class="btn btn-danger">DEL</button>
+                    </form>
+                </td>
+
             </tr>
         {% endfor %}
     </table>
 
-    <h4 class="text-center m-3">{{ tablenameSale }}</h4>
+    <br>
+
+    <h2 class="text-center m-3">{{ tablenameSale }}</h2>
     <table class="table table-striped">
         <thead>
         {% for nameSale in namesSale %}
@@ -121,11 +191,35 @@
                 {% for nameSale in namesSale %}
                     <td>{{ rowSale[nameSale] }}</td>
                 {% endfor %}
+                <td>
+                    <form method=get
+                          action="{{ url_for('blueprint.update_customer',
+                      rowid=loop.index,
+                                            key=namesSale[0],
+
+                      table=tablenameSale) }}">
+                        <button>UPD</button>
+                    </form>
+                </td>
+
+                <td>
+                    <form method=post
+                          action="{{ url_for('blueprint.delete',
+                      rowid=loop.index0,
+                      key=namesSale[0],
+                      table=tablenameSale) }}">
+                        <button type="submit" class="btn btn-danger">DEL</button>
+                    </form>
+                </td>
             </tr>
         {% endfor %}
     </table>
 
-    <h4 class="text-center m-3">{{ tablenameCheque }}</h4>
+    <br>
+    <form action="/">
+        <button style="float: right; position: absolute" type="submit" class="btn btn-success center">ADD</button>
+    </form>
+    <h2 class="text-center m-3">{{ tablenameCheque }}</h2>
     <table class="table table-striped">
         <thead>
         {% for nameCheque in namesCheque %}
@@ -138,11 +232,36 @@
                 {% for nameCheque in namesCheque %}
                     <td>{{ rowCheque[nameCheque] }}</td>
                 {% endfor %}
+                <td>
+                    <form method=get
+                          action="{{ url_for('blueprint.update_customer',
+                      rowid=loop.index,
+                                            key= namesCheque[0],
+
+                      table=tablenameCheque) }}">
+                        <button>UPD</button>
+                    </form>
+                </td>
+
+                <td>
+                    <form method=post
+                          action="{{ url_for('blueprint.delete',
+                      rowid=loop.index0,
+                      key= namesCheque[0],
+                      table=tablenameCheque) }}">
+                        <button type="submit" class="btn btn-danger">DEL</button>
+                    </form>
+                </td>
+
             </tr>
         {% endfor %}
     </table>
 
-    <h4 class="text-center m-3">{{ tablenameProduct }}</h4>
+    <form action="/product">
+        <button style="float: right; position: absolute" type="submit" class="btn btn-success center">ADD</button>
+    </form>
+    <br>
+    <h2 class="text-center m-3">{{ tablenameProduct }}</h2>
     <table class="table table-striped">
         <thead>
         {% for nameProduct in namesProduct %}
@@ -155,11 +274,36 @@
                 {% for nameProduct in namesProduct %}
                     <td>{{ rowProduct[nameProduct] }}</td>
                 {% endfor %}
+                <td>
+                    <form method=get
+                          action="{{ url_for('blueprint.update_customer',
+                      rowid=loop.index,
+                                            key= namesProduct[0],
+
+                      table=tablenameProduct) }}">
+                        <button>UPD</button>
+                    </form>
+                </td>
+
+                <td>
+                    <form method=post
+                          action="{{ url_for('blueprint.delete',
+                      rowid=loop.index0,
+                      key= namesProduct[0],
+                      table=tablenameProduct) }}">
+                        <button type="submit" class="btn btn-danger">DEL</button>
+                    </form>
+                </td>
+
             </tr>
         {% endfor %}
     </table>
 
-    <h4 class="text-center m-3">{{ tablenameCategory }}</h4>
+    <form action="/">
+        <button style="float: right; position: absolute" type="submit" class="btn btn-success center">ADD</button>
+    </form>
+    <br>
+    <h2 class="text-center m-3">{{ tablenameCategory }}</h2>
     <table class="table table-striped">
         <thead>
         {% for nameCategory in namesCategory %}
@@ -172,11 +316,34 @@
                 {% for nameCategory in namesCategory %}
                     <td>{{ rowCategory[nameCategory] }}</td>
                 {% endfor %}
+                <td>
+                    <form method=get
+                          action="{{ url_for('blueprint.update_customer',
+                       rowid=loop.index,
+                       key= namesCategory[0],
+                       table=tablenameCategory) }}">
+                        <button>UPD</button>
+                    </form>
+                </td>
+
+                <td>
+                    <form method=post
+                          action="{{ url_for('blueprint.delete',
+                      rowid=loop.index0,
+                      key= namesCategory[0],
+                      table=tablenameCategory) }}">
+                        <button type="submit" class="btn btn-danger">DEL</button>
+                    </form>
+                </td>
+
             </tr>
         {% endfor %}
     </table>
-
-    <h4 class="text-center m-3">{{ tablenameStore_Product }}</h4>
+    <br>
+    <form action="/">
+        <button style="float: right; position: absolute" type="submit" class="btn btn-success center">ADD</button>
+    </form>
+    <h2 class="text-center m-3">{{ tablenameStore_Product }}</h2>
     <table class="table table-striped">
         <thead>
         {% for nameStore_Product in namesStore_Product %}
@@ -189,11 +356,34 @@
                 {% for nameStore_Product in namesStore_Product %}
                     <td>{{ rowStore_Product[nameStore_Product] }}</td>
                 {% endfor %}
+                <td>
+                    <form method=get
+                          action="{{ url_for('blueprint.update_customer',
+                      rowid=loop.index,
+                      key= namesStore_Product[0],
+                      table=tablenameStore_Product) }}">
+                        <button>UPD</button>
+                    </form>
+                </td>
+
+                <td>
+                    <form method=post
+                          action="{{ url_for('blueprint.delete',
+                      rowid=loop.index0,
+                      key= namesStore_Product[0],
+                      table=tablenameStore_Product) }}">
+                        <button type="submit" class="btn btn-danger">DEL</button>
+                    </form>
+                </td>
+
             </tr>
         {% endfor %}
     </table>
-
-    <h4 class="text-center m-3">{{ tablenameCustomer_Card }}</h4>
+    <br>
+    <form action="/customer">
+        <button style="float: right; position: absolute" type="submit" class="btn btn-success center">ADD</button>
+    </form>
+    <h2 class="text-center m-3">{{ tablenameCustomer_Card }}</h2>
     <table class="table table-striped">
         <thead>
         {% for nameCustomer_Card in namesCustomer_Card %}
@@ -206,7 +396,27 @@
                 {% for nameCustomer_Card in namesCustomer_Card %}
                     <td>{{ rowCustomer_Card[nameCustomer_Card] }}</td>
                 {% endfor %}
+                <td>
+                    <form method=get
+                          action="{{ url_for('blueprint.update_customer',
+                      rowid=loop.index,
+                      key= namesCustomer_Card[0],
+                      table=tablenameCustomer_Card) }}">
+                        <button>UPD</button>
+                    </form>
+                </td>
+                <td>
+                    <form method=post
+                          action="{{ url_for('blueprint.delete',
+                      rowid=loop.index0,
+                      key= namesCustomer_Card[0],
+                      table=tablenameCustomer_Card) }}">
+                        <button type="submit" class="btn btn-danger">DEL</button>
+                    </form>
+                </td>
+
             </tr>
+
         {% endfor %}
     </table>
 

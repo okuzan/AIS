@@ -2,7 +2,7 @@ import datetime
 from flask import Flask, render_template_string, Blueprint, render_template, request, redirect, url_for, flash
 from flask_user import login_required, roles_required
 from flask_script import Manager, Command, Shell
-from forms import CategoryForm, ProducerForm, EmployeeForm
+from forms import CategoryForm, ProducerForm, EmployeeForm, ProductForm
 import random
 from dateutil.relativedelta import relativedelta
 
@@ -95,18 +95,18 @@ def register():
 @roles_required('Manager')  # Use of @roles_required decorator
 def admin_view():
     try:
-      con = sql.connect('dbs/zlagoda.db')
-      con.row_factory = sql.Row
-      cur = con.cursor()
-      cur.execute("select * from cheque")
-      names = [description[0] for description in cur.description]
-      rows = cur.fetchall()
-      cur.close()
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute("select * from cheque")
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
     except sql.Error as error:
-      print("Error while connecting to sqlite", error)
+        print("Error while connecting to sqlite", error)
     finally:
-       if (con):
-        con.close()
+        if (con):
+            con.close()
     return render_template("list.html", rows=rows, tablename="Check info", titles=names)
 
 
@@ -204,15 +204,19 @@ def admin_allData():
             con.close()
     return render_template('admin_allData.html', title='All Data',
                            tablenameProducer='Producer', namesProducer=namesProducer, rowsProducer=rowsProducer,
-                           tablenameReturn_Contract='Return Contract', namesReturn_Contract=namesReturn_Contract, rowsReturn_Contract=rowsReturn_Contract,
+                           tablenameReturn_Contract='Return Contract', namesReturn_Contract=namesReturn_Contract,
+                           rowsReturn_Contract=rowsReturn_Contract,
                            tablenameEmployee='Employee', namesEmployee=namesEmployee, rowsEmployee=rowsEmployee,
-                           tablenameConsignment='Consignment', namesConsignment=namesConsignment, rowsConsignment=rowsConsignment,
+                           tablenameConsignment='Consignment', namesConsignment=namesConsignment,
+                           rowsConsignment=rowsConsignment,
                            tablenameSale='Sale', namesSale=namesSale, rowsSale=rowsSale,
                            tablenameCheque='Cheque', namesCheque=namesCheque, rowsCheque=rowsCheque,
                            tablenameProduct='Product', namesProduct=namesProduct, rowsProduct=rowsProduct,
                            tablenameCategory='Category', namesCategory=namesCategory, rowsCategory=rowsCategory,
-                           tablenameStore_Product='Store Product', namesStore_Product=namesStore_Product, rowsStore_Product=rowsStore_Product,
-                           tablenameCustomer_Card='Customer Card', namesCustomer_Card=namesCustomer_Card, rowsCustomer_Card=rowsCustomer_Card)
+                           tablenameStore_Product='Store Product', namesStore_Product=namesStore_Product,
+                           rowsStore_Product=rowsStore_Product,
+                           tablenameCustomer_Card='Customer Card', namesCustomer_Card=namesCustomer_Card,
+                           rowsCustomer_Card=rowsCustomer_Card)
 
 
 @blueprint.route('/producer/', methods=['get', 'post'])
@@ -226,9 +230,11 @@ def producer():
             cur = con.cursor()
             cur.execute("SELECT MAX(ID_PRODUCER) FROM PRODUCER")
             result = cur.fetchone()
-            max_id = int(result[0])+1
+            max_id = int(result[0]) + 1
             cur.execute('''INSERT INTO PRODUCER(ID_PRODUCER, CONTRACT_NUMBER, RPOD_NAME,COUNTRY, CITY, STREET, ZIP_CODE, PHONE_NUMBER)
-                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?);''', (max_id, form.contract_number.data, form.name.data, form.country.data, form.city.data, form.street.data, form.zip_code.data, form.phone_number.data))
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?);''', (
+                max_id, form.contract_number.data, form.name.data, form.country.data, form.city.data, form.street.data,
+                form.zip_code.data, form.phone_number.data))
             con.commit()
             cur.close()
             flash('Producer was successfully added', 'success')
@@ -246,28 +252,32 @@ def producer():
 @roles_required('Manager')  # Use of @roles_required decorator
 def employee():
     form = EmployeeForm()
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
     if form.validate_on_submit():
         try:
-            con = sql.connect('dbs/zlagoda.db')
             birth = form.date_of_birth.data
             start = form.date_of_start.data
-            if(birth>(start - relativedelta(years=18))):
+            if (birth > (start - relativedelta(years=18))):
                 flash('Age can`t be less than 18', 'danger')
                 return render_template('form.html', form=form, title='Add employee')
-            con.row_factory = sql.Row
-            cur = con.cursor()
             cur.execute("SELECT ID_EMPLOYEE FROM EMPLOYEE")
+
             result = cur.fetchall()
-            num = random.randint(1,10000)
-            while(result.__contains__('e'+str(num))):
-                num=random.randint(1,10000)
-            eid = 'e'+str(num)
+            num = random.randint(1, 10000)
+            while (result.__contains__('e' + str(num))):
+                num = random.randint(1, 10000)
+            eid = 'e' + str(num)
             cur.execute('''INSERT INTO EMPLOYEE(ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC, ROLE, SALARY, DATE_OF_BIRTH, DATE_OF_START, PHONE_NUMBER, CITY, STREET, ZIP_CODE)
-                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''', (eid, form.surname.data, form.name.data, form.patronymic.data, form.role.data, form.salary.data, form.date_of_birth.data, form.date_of_start.data, form.phone_number.data,  form.city.data, form.street.data, form.zip_code.data))
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''', (
+                eid, form.surname.data, form.name.data, form.patronymic.data, form.role.data, form.salary.data,
+                form.date_of_birth.data, form.date_of_start.data, form.phone_number.data, form.city.data,
+                form.street.data,
+                form.zip_code.data))
             con.commit()
             cur.close()
             user = User(
-                email= eid + "." + form.name.data + "." +form.surname.data +".@db.com",
+                email=eid + "." + form.name.data + "." + form.surname.data + ".@db.com",
                 email_confirmed_at=datetime.utcnow(),
                 password=user_manager.hash_password(form.password.data),
             )
@@ -287,3 +297,40 @@ def employee():
             if (con):
                 con.close()
     return render_template('form.html', form=form, title='Add Employee')
+
+
+@blueprint.route('/product', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def product():
+    form = ProductForm()
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute("SELECT CATEGORY_NUMBER, CATEGORY_NAME FROM CATEGORY")
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
+    form.category_number.choices = groups_list
+    if form.validate_on_submit():
+        try:
+            s = value = dict(form.category_number.choices).get(form.category_number.data)
+            print(value + " @")  # here is the answer you need to parse further
+            chosen_fk = s[s.find("(") + 1:s.find(")")]
+            print(chosen_fk)  # here is ID (something between '(' ')' )
+            cur.execute("SELECT ID_PRODUCT FROM PRODUCT")
+            result = cur.fetchall()
+            num = random.randint(1, 10000)
+            while (result.__contains__('e' + str(num))):
+                num = random.randint(1, 10000)
+            eid = 'e' + str(num)
+            cur.execute('''INSERT INTO PRODUCT(ID_PRODUCT, CATEGORY_NUMBER, PRODUCT_NAME, CHARACTERISTICS)
+                                   VALUES (?, ?, ?, ?);''', (
+                eid, chosen_fk, form.product_name.data, form.characteristics.data))
+            con.commit()
+            flash('Product was successfully added', 'success')
+            return redirect(url_for('blueprint.product'))
+        except sql.Error as error:
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Add Product')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Add Product')

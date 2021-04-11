@@ -1,4 +1,6 @@
 import datetime
+from sqlite3 import Row
+
 from flask import Flask, render_template_string, Blueprint, render_template, request, redirect, url_for, flash
 from flask_user import login_required, roles_required
 from flask_script import Manager, Command, Shell
@@ -359,14 +361,16 @@ def employee():
         try:
             birth = form.date_of_birth.data
             start = form.date_of_start.data
-            if (birth > (start - relativedelta(years=18))):
+            if birth > (start - relativedelta(years=18)):
                 flash('Age can`t be less than 18', 'danger')
                 return render_template('form.html', form=form, title='Add employee')
             cur.execute("SELECT ID_EMPLOYEE FROM EMPLOYEE")
-
             result = cur.fetchall()
             num = random.randint(1, 10000)
-            while (result.__contains__('e' + str(num))):
+            temp = []
+            for row in result:
+                temp.append(row[0])
+            while temp.__contains__('e' + str(num)):
                 num = random.randint(1, 10000)
             eid = 'e' + str(num)
             cur.execute('''INSERT INTO EMPLOYEE(ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC, ROLE, SALARY, DATE_OF_BIRTH, DATE_OF_START, PHONE_NUMBER, CITY, STREET, ZIP_CODE)
@@ -419,7 +423,10 @@ def product():
             cur.execute("SELECT ID_PRODUCT FROM PRODUCT")
             result = cur.fetchall()
             num = random.randint(1, 10000)
-            while (result.__contains__('e' + str(num))):
+            temp = []
+            for row in result:
+                temp.append(row[0])
+            while temp.__contains__('e' + str(num)):
                 num = random.randint(1, 10000)
             eid = 'e' + str(num)
             cur.execute('''INSERT INTO PRODUCT(ID_PRODUCT, CATEGORY_NUMBER, PRODUCT_NAME, CHARACTERISTICS)
@@ -449,7 +456,10 @@ def customer():
             cur.execute("SELECT CARD_NUMBER FROM CUSTOMER_CARD")
             result = cur.fetchall()
             num = random.randint(1, 10000)
-            while (result.__contains__('c' + str(num))):
+            temp = []
+            for row in result:
+                temp.append(row[0])
+            while temp.__contains__('c' + str(num)):
                 num = random.randint(1, 10000)
             eid = 'c' + str(num)
             cur.execute('''INSERT INTO CUSTOMER_CARD(CARD_NUMBER, CUST_SURNAME, CUST_NAME, CUST_PATRONYMIC, PHONE_NUMBER, CITY, STREET, ZIP_CODE, PERCENT)
@@ -459,7 +469,7 @@ def customer():
             con.commit()
             cur.close()
             flash('Customer Card was successfully added', 'success')
-            return redirect(url_for('blueprint.home_page'))
+            return redirect(url_for('blueprint.customer'))
         except sql.Error as error:
             flash(error, 'danger')
             return render_template('form.html', form=form, title='Add Customer Card')

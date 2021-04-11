@@ -156,7 +156,7 @@ class ConsignmentForm(FlaskForm):
 
     employee = SelectField(u'Employee', coerce=str, validators=[DataRequired()])
 
-    price = StringField("Selling price: ", validators=[DataRequired(message="This field can not be empty"),
+    price = StringField("Purchase price: ", validators=[DataRequired(message="This field can not be empty"),
                                                        validators.Regexp(r'(^\d+\.?\d+$)',
                                                                          message="Incorrect price format")])
 

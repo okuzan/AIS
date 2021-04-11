@@ -501,7 +501,6 @@ def store_product():
     form.upc_prom.choices = groups_list
 
     if form.validate_on_submit():
-        #upc_prom + id_product
         try:
             con = sql.connect('dbs/zlagoda.db')
             con.row_factory = sql.Row
@@ -525,6 +524,61 @@ def store_product():
             if (con):
                 con.close()
     return render_template('form.html', form=form, title='Add Store Product')
+
+@blueprint.route('/consignment/', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def consignment():
+    form = ConsignmentForm()
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute('''SELECT ID_PRODUCER, RPOD_NAME FROM PRODUCER''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
+    form.producer.choices = groups_list
+
+    cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC
+                   FROM EMPLOYEE
+                   WHERE ROLE="manager"''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " "+ i[3]) for i in result]
+    form.employee.choices = groups_list
+
+    cur.execute('''SELECT UPC
+                   FROM STORE_PRODUCT      
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") ") for i in result]
+    form.upc.choices = groups_list
+
+    if form.validate_on_submit():
+        try:
+            con = sql.connect('dbs/zlagoda.db')
+            con.row_factory = sql.Row
+            cur = con.cursor()
+            cur.execute("SELECT CONS_NUMBER FROM CONSIGNMENT")
+            result = cur.fetchall()
+            num = random.randint(1, 10000)
+            temp = []
+            for row in result:
+                temp.append(row[0])
+            while temp.__contains__('c' + str(num)):
+                num = random.randint(1, 10000)
+            eid = 'c' + str(num)
+            cur.execute('''INSERT INTO CONSIGNMENT(CONS_NUMBER, ID_PRODUCER, ID_EMPLOYEE, UPC, SIGNATURE_DATE, PRODUCTS_NUMBER, PURCHASE_PRICE)
+                                               VALUES (?, ?, ?, ?, ?, ?, ?);''', (
+                eid, form.producer.data, form.employee.data, form.upc.data, form.signature_date.data, form.quantity.data,
+                form.price.data))
+            con.commit()
+            cur.close()
+            flash('Consignment was successfully added', 'success')
+            return redirect(url_for('blueprint.store_product'))
+        except sql.Error as error:
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Add Consignment')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Add Consignment')
 
 
 @blueprint.route('/admin_queries/', methods=['get', 'post'])

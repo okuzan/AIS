@@ -146,20 +146,26 @@ def category():
 #     print(pin)
 
 @roles_required('Manager')
-@blueprint.route('/<table>/<int:rowid>/delete', methods=['POST'])
-def delete(table, rowid):
+@blueprint.route('/<table>/<key>/<int:rowid>/delete', methods=['POST'])
+def delete(table, key, rowid):
+    print("DELETING")
     print(rowid)
-    print(table)
+    table1 = table if ' ' not in table else table.replace(' ', '_')
+    print(table1)
     con = sql.connect('dbs/zlagoda.db')
     cur = con.cursor()
-    cur.execute("DELETE FROM " + table +
-                " WHERE rowid = "
-                "(" + "SELECT rowid FROM "
-                + table + " LIMIT 1 OFFSET " + (
+    cur.execute("DELETE FROM " + table1 +
+                " WHERE " + key + " = "
+                + "(" + "SELECT " + key + " FROM "
+                + table1 + " LIMIT 1 OFFSET " + (
                     str(rowid)) + ")"),
+    # cur.execute("SELECT * FROM "
+    #             + table1 + " WHERE rowid= " + (str(rowid))),
+
+    # print(cur.fetchall())
     con.commit()
     cur.close()
-    return redirect('/delete')
+    return redirect('/admin/data')
 
 
 @blueprint.route('/delete', methods=['get'])
@@ -179,7 +185,7 @@ def delete_page():
 
 @roles_required('Manager')
 @blueprint.route('/<int:rowid>/update', methods=['GET', 'POST'])
-def update(rowid):
+def update_employee(rowid):
     print(request.form)
     print(rowid)
     con = sql.connect('dbs/zlagoda.db')
@@ -216,13 +222,13 @@ def update(rowid):
             values = (request.form['surname'], request.form['name'], request.form['patronymic'], request.form['role'],
                       request.form['salary'], birth, start,
                       request.form['phone_number'], request.form['city'], request.form['street'],
-                      request.form['zip_code'], (str(rowid)))
+                      request.form['zip_code'], (str(rowid - 1)))
             print(request)
             cur.execute("""UPDATE EMPLOYEE
                         SET EMPL_SURNAME = ?, EMPL_NAME = ?, EMPL_PATRONYMIC = ?, ROLE = ?,
                         SALARY = ?,DATE_OF_BIRTH = ?, DATE_OF_START = ?,
                         PHONE_NUMBER = ?, CITY = ?, STREET = ?, ZIP_CODE = ?
-                        WHERE rowid = (SELECT rowid FROM EMPLOYEE LIMIT 1 OFFSET ?)""", values)
+                        WHERE ID_EMPLOYEE = (SELECT ID_EMPLOYEE FROM EMPLOYEE LIMIT 1 OFFSET ?)""", values)
 
             con.commit()
             cur.close()
@@ -318,7 +324,7 @@ def admin_data():
                            rowsCustomer_Card=rowsCustomer_Card)
 
 
-@blueprint.route('/producer/', methods=['get', 'post'])
+@blueprint.route('/producer', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator
 def producer():
     form = ProducerForm()
@@ -351,7 +357,6 @@ def producer():
 @roles_required('Manager')  # Use of @roles_required decorator
 def employee():
     form = EmployeeForm(hide_a=False)
-    form.name.data = "!!!!!!"
     con = sql.connect('dbs/zlagoda.db')
     cur = con.cursor()
     if form.validate_on_submit():
@@ -399,6 +404,49 @@ def employee():
     return render_template('form.html', form=form, title='Add Employee')
 
 
+@blueprint.route('/<int:rowid>/producerupdate', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def update_producer(rowid):
+    con = sql.connect('dbs/zlagoda.db')
+    # con.row_factory = sql.Row
+    cur = con.cursor()
+    cur.execute("SELECT * FROM PRODUCER LIMIT 1 OFFSET " + (str(rowid - 1))),
+    row = cur.fetchall()[0]
+    print(row)
+    form = ProducerForm()
+    form.contract_number.data = row[1]
+    form.name.data = row[2]
+    form.country.data = row[3]
+    form.city.data = row[4]
+    form.street.data = row[5]
+    form.zip_code.data = row[6]
+    form.phone_number.data = row[7]
+
+    if form.is_submitted():
+        try:
+            cur.execute('''UPDATE PRODUCER
+             SET CONTRACT_NUMBER = ?, RPOD_NAME = ?,
+             COUNTRY = ?,  CITY = ?, STREET = ?, 
+             ZIP_CODE = ?, PHONE_NUMBER = ?
+             WHERE ID_PRODUCER = (SELECT ID_PRODUCER FROM CUSTOMER_CARD LIMIT 1 OFFSET ?)''', (
+                request.form['contract_number'], request.form['name'],
+                request.form['country'], request.form['city'],
+                request.form['street'], request.form['zip_code'],
+                request.form['phone_number'], str(rowid - 1)))
+
+            con.commit()
+            cur.close()
+            flash('Producer was successfully updated', 'success')
+            return redirect(url_for('blueprint.admin_data'))
+        except sql.Error as error:
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Update producer')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Update producer')
+
+
 @blueprint.route('/product', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator
 def product():
@@ -436,7 +484,7 @@ def product():
     return render_template('form.html', form=form, title='Add Product')
 
 
-@blueprint.route('/customer/', methods=['get', 'post'])
+@blueprint.route('/customer', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator
 def customer():
     form = CustomerForm()
@@ -466,6 +514,46 @@ def customer():
             if (con):
                 con.close()
     return render_template('form.html', form=form, title='Add Customer Card')
+
+
+@blueprint.route('/<int:rowid>/update-customer', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def update_customer(rowid):
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute("SELECT * FROM CUSTOMER_CARD LIMIT 1 OFFSET " + (str(rowid - 1))),
+    row = cur.fetchall()[0]
+    form = CustomerForm()
+    form.surname.data = row[1]
+    form.name.data = row[2]
+    form.patronymic.data = row[3]
+    form.phone_number.data = str(row[4])
+    form.city.data = row[5]
+    form.street.data = row[6]
+    form.zip_code.data = str(row[7])
+    form.percent.data = str(row[8])
+    if form.validate_on_submit():
+        try:
+            # con.row_factory = sql.Row
+            cur.execute('''UPDATE CUSTOMER_CARD
+             SET CUST_SURNAME = ?, CUST_NAME = ?,
+             CUST_PATRONYMIC = ?, PHONE_NUMBER = ?, CITY = ?, 
+             STREET = ?, ZIP_CODE = ?, PERCENT = ?
+             WHERE CARD_NUMBER = (SELECT CARD_NUMBER FROM CUSTOMER_CARD LIMIT 1 OFFSET ?)''', (
+                request.form['surname'], request.form['name'], request.form['patronymic'],
+                request.form['phone_number'], request.form['city'],
+                request.form['street'], request.form['zip_code'], request.form['percent'], str(rowid - 1)))
+            con.commit()
+            cur.close()
+            flash('Customer Card was successfully updated', 'success')
+            return redirect(url_for('blueprint.home_page'))
+        except sql.Error as error:
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Update Customer Card')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Update Customer Card')
 
 
 @blueprint.route('/admin_queries/', methods=['get', 'post'])

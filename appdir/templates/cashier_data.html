@@ -1,19 +1,4 @@
 <style type="text/css">
-    .center {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-left: 10px;
-        margin-bottom: 10px;
-        border: 2px solid green;
-    }
-
-    body {
-        color: #536482;
-        background-color: white;
-        zoom: 90%;
-    }
-
     .title {
         margin-top: 15px;
         text-align: center;
@@ -22,15 +7,17 @@
         display: block;
     }
 
+    #button {
+        text-align: center;
+    }
 
 </style>
 {% extends "base.html" %}
 {% block content %}
     <br>
     {#    <h2 class="text-center m-3">{{ tablenameCheque }}</h2>#}
-    <a class="title"
-       href={{ url_for('blueprint.table',table=tablenameCheque) }}>{{ tablenameCheque }} </a>
-
+    <h2 style="text-align: center">{{ tablenameCheque }} </h2>>
+    <br>
     <table class="table table-striped">
         <thead>
         {% for nameCheque in namesCheque %}
@@ -56,10 +43,10 @@
         {% endfor %}
     </table>
 
-    {#    <h2 class="text-center m-3">{{ tablenameCustomer_Card }}</h2>#}
-    <a class="title"
-       href={{ url_for('blueprint.table',table=tablenameCustomer_Card) }}>{{ tablenameCustomer_Card }} </a>
-
+        <h2 class="text-center m-3">{{ tablenameCustomer_Card }}</h2>
+{#    <a class="title"#}
+{#       href={{ url_for('blueprint.table',table=tablenameCustomer_Card) }}>{{ tablenameCustomer_Card }} </a>#}
+    <br>
     <table class="table table-striped">
         <thead>
         {% for nameCustomer_Card in namesCustomer_Card %}
@@ -89,6 +76,7 @@
     <br>
     <br>
     {#    onclick="window.print();return false;" />#}
-    <button type="button" class="btn btn-info" onclick="window.print()">Print</button>
+    <button id="button" type="button" style="text-align: center" class="btn btn-info" onclick="window.print()">Print
+    </button>
 
 {% endblock %}

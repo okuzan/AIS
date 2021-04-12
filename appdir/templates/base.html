@@ -24,9 +24,9 @@
                     <li class="active"><a href{{ url_for("blueprint.home_page") }}>Home</a></li>
                     {% if current_user.is_authenticated %}
                         {% if current_user.has_roles('Manager') %}
-                            <li><a href={{ url_for("blueprint.admin_data") }}>Queries</a></li>
+                            <li><a href={{ url_for("blueprint.admin_data") }}>Data</a></li>
                         {% elif current_user.has_roles('Cashier') %}
-                            <li><a href={{ url_for("blueprint.cashier_data") }}>Queries</a></li>
+                            <li><a href={{ url_for("blueprint.cashier_data") }}>Data</a></li>
                         {% else %}
                             <li><a href="/">Data</a></li>
                         {% endif %}

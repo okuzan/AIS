@@ -1,6 +1,7 @@
 import datetime
 import random
 import sqlite3 as sql
+from collections import namedtuple
 
 from dateutil.relativedelta import relativedelta
 from flask import Blueprint, render_template, request, redirect, url_for
@@ -668,51 +669,129 @@ def update_category(rowid):
                 con.close()
     return render_template('form.html', form=form, title='Update Category')
 
-
 @blueprint.route('/<int:rowid>/update-cheque', methods=['get', 'post'])
-@roles_required('Cashier')  # Use of @roles_required decorator
+@roles_required(['Cashier', 'Manager'])  # Use of @roles_required decorator
 def update_cheque(rowid):
     con = sql.connect('dbs/zlagoda.db')
     cur = con.cursor()
-    cur.execute("SELECT * FROM CATEGORY LIMIT 1 OFFSET " + (str(rowid - 1))),
+    cur.execute("SELECT * FROM CHEQUE LIMIT 1 OFFSET " + (str(rowid - 1))),
     row = cur.fetchall()[0]
-    form = CheckForm()
+    cur.execute('''SELECT UPC, CHECK_NUMBER, PRODUCT_NUMBER
+                   FROM SALE
+                   WHERE CHECK_NUMBER = ?
+                   ''', (row[0],))
+    sales = cur.fetchall()
+    print("sales")
+    print(sales)
+    sale = namedtuple('Sale', ['upc_code', 'check_number', 'quantity'])
+    sales_arr = [sale(i[0], i[1], i[2]) for i in sales]
+    data = {
+        # 'sales': [
+        #     sale('Bread_FIRST_LINE', 1),
+        # ]
+        'sales': sales_arr
+    }
+
+    print(row)
+    print("sales")
+    print(sales)
+
     cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC
                    FROM EMPLOYEE
-                   WHERE ROLE="manager"''')
+                   WHERE ROLE="cashier"''')
     result = cur.fetchall()
-    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
-    form.employee.choices = groups_list
+    empl_choices = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
+
     cur.execute('''SELECT CARD_NUMBER, CUST_SURNAME, CUST_NAME, CUST_PATRONYMIC
                           FROM CUSTOMER_CARD''')
-    result = cur.fetchall()
-    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
-    form.card.choices = [("", "---")] + groups_list
+    result2 = cur.fetchall()
+    card_choices = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result2]
 
-    if form.validate_on_submit():
+    # form.card.text = "!row[2]"
+    form = CheckForm(data=data)
+    form.employee.choices = empl_choices
+    form.card.choices = card_choices + [("", "---")]
+    form.employee.data = row[1]  # TODO default
+    form.card.data = row[2]  # TODO default
+
+    if form.is_submitted():
         try:
+            sales_data = []
+            for lp in range(len(sales)):
+                req_str1 = "sales-" + str(lp) + "-upc_code"
+                req_str2 = "sales-" + str(lp) + "-quantity"
+                req_str3 = "sales-" + str(lp) + "-check_number"
+                upc_code = request.form[req_str1]
+                print(upc_code)
+
+                quantity = request.form[req_str2]
+                print(quantity)
+
+                check_number = request.form[req_str3]
+                print(check_number)
+                print("this upc")
+                print(sales[lp][0])
+                cur.execute('''UPDATE SALE
+                 SET UPC = ?, PRODUCT_NUMBER = ?
+                 WHERE UPC = ? AND CHECK_NUMBER = ?''', (
+                    upc_code, quantity, sales[lp][0], check_number
+                ))
+                con.commit()
+                cur.execute('''SELECT SELLING_PRICE
+                 FROM SALE
+                 WHERE UPC = ? AND CHECK_NUMBER = ?''', (
+                    sales[lp][0], check_number
+                ))
+                price = cur.fetchall()[0][0]
+                print("price")
+                print(price)
+                sale_data = [upc_code, check_number, quantity, price]
+                sales_data.append(sale_data)
+                con.commit()
+
+            print("sales_data")
+            print(sales_data)
+            sum_total = 0
+            cur.execute('''SELECT PERCENT 
+                         FROM CUSTOMER_CARD
+                         WHERE CARD_NUMBER=?''', (form.card.data,))
+            result = cur.fetchall()
+
+            percent = result[0][0]
+            print("percent")
+            print(percent)
+
+            for sale in sales_data:
+                sum_total += int(sale[2]) * int(sale[3])
+            if percent != 0:
+                sum_total = 0.01 * (100 - percent) * sum_total
+
+            sum_total = round(sum_total, 2)
+            vat = round(0.2 * sum_total / 1.2, 2)
+            print("vat")
+            print(vat)
+            print("sum_total")
+            print(sum_total)
             cur.execute('''UPDATE CHEQUE
-             SET ID_EMPLOYEE = ?, CARD_NUMBER = ?, 
-             PRINT_DATE = ?, SUM_TOTAL = ?, VAT = ?
+             SET ID_EMPLOYEE = ?, CARD_NUMBER = ?,
+             SUM_TOTAL = ?, VAT = ?
              WHERE CHECK_NUMBER = (SELECT CHECK_NUMBER FROM CHEQUE LIMIT 1 OFFSET ?)''', (
                 request.form['employee'],
                 request.form['card'],
-                request.form['data'],
-                request.form['sum'],
-                request.form['vat'],
+                sum_total,
+                vat,
                 str(rowid - 1)))
             con.commit()
             cur.close()
-            flash('Customer Card was successfully updated', 'success')
+            flash('Cheque was successfully updated', 'success')
             return redirect(url_for('blueprint.home_page'))
         except sql.Error as error:
             flash(error, 'danger')
-            return render_template('checkForm.html', form=form, title='Update Category')
+            return render_template('check_update.html', form=form, title='Update Cheque')
         finally:
             if (con):
                 con.close()
-    return render_template('checkForm.html', form=form, title='Update Category')
-
+    return render_template('check_update.html', form=form, title='Update Cheque')
 
 @blueprint.route('/<int:rowid>/update-product', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator

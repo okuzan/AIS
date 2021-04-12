@@ -138,9 +138,6 @@ class StoreProductForm(FlaskForm):
     upc_prom = SelectField(u'UPC promotional: ', coerce=str)
     product_number = SelectField(u'Product: ', coerce=int, validators=[DataRequired()])
 
-    price = StringField("Selling price: ", validators=[DataRequired(message="This field can not be empty"),
-                                                 validators.Regexp(r'(^\d+\.?\d+$)',
-                                                                   message="Incorrect price format")])
     quantity = StringField("Quantity: ", validators=[DataRequired(message="This field can not be empty"),
                                                    validators.Regexp(r'^\d+$')])
 

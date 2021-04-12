@@ -534,15 +534,14 @@ def update_contract(rowid):
     print(rowid)
     print(row)
     form = ReturnContractForm()
-    # form.upc = row[1]
-    # form.employee = row[3]
+    form.upc.default =[(row[0], "(" + str(row[0]) + ") " ) ]
+    form.process()
+    cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC FROM EMPLOYEE WHERE ID_EMPLOYEE=?''', (row[2],))
+    cur_empl = cur.fetchall()[0]
+    form.employee.default = [(cur_empl[0], "(" + str(cur_empl[0]) + ") " + cur_empl[1] + " "+ cur_empl[2]+ " "+ cur_empl[3]) ]
+    form.process()
     form.quantity.data = str(row[5])
     form.signature_date.data = datetime.strptime(str(row[4]), '%Y-%m-%d')
-
-    cur.execute('''SELECT ID_PRODUCER, RPOD_NAME FROM PRODUCER''')
-    result = cur.fetchall()
-    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
-    form.producer.choices = groups_list
 
     cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC
                    FROM EMPLOYEE
@@ -695,10 +694,7 @@ def update_cheque(rowid):
     result = cur.fetchall()
     groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
     form.card.choices = [("", "---")] + groups_list
-    form.signature_date.data = row[3]  # todo
-    form.sum.data = str(row[4])
-    form.vat.data = str(row[5])
-    form.name.data = row[1]
+
     if form.validate_on_submit():
         try:
             cur.execute('''UPDATE CHEQUE
@@ -717,11 +713,11 @@ def update_cheque(rowid):
             return redirect(url_for('blueprint.home_page'))
         except sql.Error as error:
             flash(error, 'danger')
-            return render_template('form.html', form=form, title='Update Category')
+            return render_template('checkForm.html', form=form, title='Update Category')
         finally:
             if (con):
                 con.close()
-    return render_template('form.html', form=form, title='Update Category')
+    return render_template('checkForm.html', form=form, title='Update Category')
 
 
 @blueprint.route('/<int:rowid>/update-product', methods=['get', 'post'])
@@ -836,6 +832,79 @@ def update_store_product(rowid):
                 con.close()
     return render_template('form.html', form=form, title='Update Store-Product')
 
+@blueprint.route('/<int:rowid>/update-sale', methods=['get', 'post'])
+@roles_required('Manager')  # Use of @roles_required decorator
+def update_sale(rowid):
+    form = StoreProductForm()
+    con = sql.connect('dbs/zlagoda.db')
+    cur = con.cursor()
+    cur.execute("SELECT * FROM STORE_PRODUCT LIMIT 1 OFFSET " + (str(rowid - 1))),
+    row = cur.fetchall()[0]
+    cur.execute('''SELECT ID_PRODUCT, PRODUCT_NAME FROM PRODUCT
+    WHERE 2>(SELECT COUNT(ID_PRODUCT)
+            FROM STORE_PRODUCT
+            WHERE PRODUCT.ID_PRODUCT=ID_PRODUCT
+    )
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
+    form.product_number.choices = groups_list
+    cur.execute('''SELECT UPC
+                   FROM STORE_PRODUCT S
+                   WHERE PROMOTIONAL_PRODUCT=1 AND UPC NOT IN (
+                   SELECT UPC_PROM
+                   FROM STORE_PRODUCT
+                   WHERE UPC_PROM IS NOT NULL
+                   )      
+    ''')
+    result = cur.fetchall()
+    groups_list = [(i[0], "(" + i[0] + ") ") for i in result]
+    form.upc_prom.choices = [('-1','---')]+groups_list
+
+    # form.category_number = row[1]
+    form.upc_code.data = row[0]
+    form.price.data = str(row[3])
+    form.quantity.data = str(row[4])
+    form.promotional.data = str(row[5])
+
+    if form.is_submitted():
+        try:
+            if form.upc_prom.data.__len__() < 12:
+                cur.execute('''UPDATE STORE_PRODUCT
+                                            SET UPC = ?, UPC_PROM = NULL, ID_PRODUCT = ?, SELLING_PRICE = ?,
+                                             PRODUCTS_NUMBER = ?, PROMOTIONAL_PRODUCT = ? 
+                                            WHERE UPC = (SELECT UPC FROM STORE_PRODUCT LIMIT 1 OFFSET ?)''', (
+                    request.form['upc_code'],
+                    request.form['product_number'],
+                    request.form['price'],
+                    request.form['quantity'],
+                    request.form['promotional'],
+                    str(rowid - 1)))
+            else:
+                cur.execute('''UPDATE STORE_PRODUCT
+                             SET UPC = ?, UPC_PROM = ?, ID_PRODUCT = ?, SELLING_PRICE = ?,
+                              PRODUCTS_NUMBER = ?, PROMOTIONAL_PRODUCT = ? 
+                             WHERE UPC = (SELECT UPC FROM STORE_PRODUCT LIMIT 1 OFFSET ?)''', (
+                    request.form['upc_code'],
+                    request.form['upc_prom'],
+                    request.form['product_number'],
+                    request.form['price'],
+                    request.form['quantity'],
+                    request.form['promotional'],
+                    str(rowid - 1)))
+
+
+            con.commit()
+            cur.close()
+            flash('Store-Product was successfully updated', 'success')
+            return redirect(url_for('blueprint.home_page'))
+        except sql.Error as error:
+            flash(error, 'danger')
+            return render_template('form.html', form=form, title='Update Store-Product')
+        finally:
+            if (con):
+                con.close()
+    return render_template('form.html', form=form, title='Update Store-Product')
 
 @blueprint.route('/<int:rowid>/update-customer', methods=['get', 'post'])
 @roles_required('Cashier')  # Use of @roles_required decorator
@@ -1287,14 +1356,31 @@ def store_product():
             con.row_factory = sql.Row
             cur = con.cursor()
             if form.upc_prom.data.__len__() < 12:
+                if form.quantity.data !='0':
+                    flash('You can set only 0 quantity for new no promotional product', 'danger')
+                    return render_template('form.html', form=form, title='Add Store Product')
                 cur.execute('''INSERT INTO STORE_PRODUCT(UPC, ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PROMOTIONAL_PRODUCT)
-                                                  VALUES (?, ?, ?, ?, ?);''', (
-                    form.upc_code.data, form.product_number.data, form.price.data,
-                    form.quantity.data, form.promotional.data))
+                                                  VALUES (?, ?,?, ?, ?);''', (
+                    form.upc_code.data, form.product_number.data,0,
+                    0, form.promotional.data))
             else:
+                if form.promotional.data == '1':
+                    flash('You can`t set UPC prom for promotional product', 'danger')
+                    return render_template('form.html', form=form, title='Add Store Product')
+                cur.execute('''SELECT PURCHASE_PRICE
+                FROM CONSIGNMENT 
+                WHERE UPC IN (SELECT UPC
+                            FROM STORE_PRODUCT
+                            WHERE PROMOTIONAL='0' AND ID_PRODUCT=?
+                )''', (form.product_number.data,))
+                result = cur.fetchall()
+                if result.__len__()<1:
+                    flash('You can`t create promotional product without store product', 'danger')
+                    return render_template('form.html', form=form, title='Add Store Product')
+                price = round(1.34*float(result[0][0]),2)
                 cur.execute('''INSERT INTO STORE_PRODUCT(UPC, UPC_PROM, ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PROMOTIONAL_PRODUCT)
                                    VALUES (?, ?, ?, ?, ?, ?);''', (
-                    form.upc_code.data, form.upc_prom.data, form.product_number.data, form.price.data,
+                    form.upc_code.data, form.upc_prom.data, form.product_number.data, price,
                     form.quantity.data,
                     form.promotional.data))
             con.commit()

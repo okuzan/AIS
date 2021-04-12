@@ -3,50 +3,60 @@
         position: absolute;
         top: 13px;
     }
+
+    .navbarclass {
+        width: 100%;
+        white-space: nowrap;
+    }
 </style>
 
 {% extends "bootstrap/base.html" %}
 {% block title %}AIS{% endblock %}
 
 {% block navbar %}
-    <nav class="navbar navbar-inverse">
-        <div class="container-fluid text-center">
-            <div class="navbar-header">
-                <a class="navbar-brand" href={{ url_for("blueprint.home_page") }}>AIS</a>
+    <div class="navbarclass">
+        <nav class="navbar navbar-inverse">
+            <div class="container-fluid text-center">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href={{ url_for("blueprint.home_page") }}>AIS</a>
+                </div>
+                <ul class="nav navbar-nav">
+                    <li class="active"><a href{{ url_for("blueprint.home_page") }}>Home</a></li>
+                    <li><a href={{ url_for("blueprint.admin_data") }}>Data</a></li>
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.has_roles('Manager') %}
+                            <li><a href="/admin_queries/">Queries</a></li>
+                        {% elif current_user.has_roles('Cashier') %}
+                            <li><a href="/cashier_queries/">Queries</a></li>
+                        {% else %}
+                            <li><a href="/">Queries</a></li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.has_roles('Manager') %}
+                            <li class="navbar-texty"><p style="color:whitesmoke"> {{ current_user.email }}
+                                (Manager) </p>
+                            </li>
+                            <li><a href={{ url_for('user.logout') }}><span
+                                    class="glyphicon glyphicon-log-out"></span></a>
+                            </li>
+                        {% else %}
+                            <li class="navbar-texty"><p style="color:whitesmoke"> {{ current_user.email }} </p></li>
+                            <li><a href={{ url_for('user.logout') }}><span
+                                    class="glyphicon glyphicon-log-out"></span></a>
+                            </li>
+                        {% endif %}
+                    {% else %}
+                        <li><a href={{ url_for('blueprint.login_page') }}><span
+                                class="glyphicon glyphicon-log-in"></span></a>
+                        </li>
+                    {% endif %}
+                </ul>
             </div>
-            <ul class="nav navbar-nav">
-                <li class="active"><a href{{ url_for("blueprint.home_page") }}>Home</a></li>
-                <li><a href={{ url_for("blueprint.admin_data") }}>Data</a></li>
-                {% if current_user.is_authenticated %}
-                    {% if current_user.has_roles('Manager') %}
-                        <li><a href="/admin_queries/">Queries</a></li>
-                    {% elif current_user.has_roles('Cashier') %}
-                        <li><a href="/cashier_queries/">Queries</a></li>
-                    {% else %}
-                        <li><a href="/">Queries</a></li>
-                    {% endif %}
-                {% endif %}
-            </ul>
-            <ul class="nav navbar-nav navbar-right">
-                {% if current_user.is_authenticated %}
-                    {% if current_user.has_roles('Manager') %}
-                        <li class="navbar-texty"><p style="color:whitesmoke"> {{ current_user.email }} (Manager) </p>
-                        </li>
-                        <li><a href={{ url_for('user.logout') }}><span class="glyphicon glyphicon-log-out"></span></a>
-                        </li>
-                    {% else %}
-                        <li class="navbar-texty"><p style="color:whitesmoke"> {{ current_user.email }} </p></li>
-                        <li><a href={{ url_for('user.logout') }}><span class="glyphicon glyphicon-log-out"></span></a>
-                        </li>
-                    {% endif %}
-                {% else %}
-                    <li><a href={{ url_for('blueprint.login_page') }}><span
-                            class="glyphicon glyphicon-log-in"></span></a>
-                    </li>
-                {% endif %}
-            </ul>
-        </div>
-    </nav>
+        </nav>
+    </div>
     <div>
         {% for category, message in get_flashed_messages(with_categories=True) %}
             <div class="alert alert-{{ category }}" role="alert" hidden="true">

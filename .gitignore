@@ -156,3 +156,5 @@ cython_debug/
 basis_app.sqlite
 zlagoda.db
 dbs/zlagoda.db
+appdir/dbs/zlagoda.db
+appdir/dbs/.DS_Store

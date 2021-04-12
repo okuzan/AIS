@@ -160,7 +160,7 @@ def delete(table, key, rowid):
                     str(rowid)) + ")"),
     con.commit()
     cur.close()
-    return redirect('/admin/data')
+    return redirect('/admin_allData')
 
 
 @blueprint.route('/delete', methods=['get'])
@@ -175,7 +175,7 @@ def delete_page():
     namesProducer = [description[0] for description in cur.description]
     rowsProducer = cur.fetchall()
 
-    return redirect('/admin/data')
+    return redirect('/admin_allData')
 
 
 @roles_required('Manager')
@@ -537,7 +537,6 @@ def update_contract(rowid):
     # form.upc = row[1]
     # form.producer = row[2]
     # form.employee = row[3]
-    form.sum.data = str(row[6])
     form.quantity.data = str(row[5])
     form.signature_date.data = datetime.strptime(str(row[4]), '%Y-%m-%d')
 
@@ -633,6 +632,10 @@ def update_consignment(rowid):
                 request.form['quantity'],
                 request.form['price'],
                 str(rowid - 1)))
+            new_price = round(1.56 * float(form.price.data), 2)
+            cur.execute('''UPDATE STORE_PRODUCT
+                                       SET SELLING_PRICE = ?
+                                       WHERE UPC=?''', (new_price, form.upc.data))
             con.commit()
             cur.close()
             flash('Consignment was successfully updated', 'success')
@@ -675,7 +678,7 @@ def update_category(rowid):
 
 
 @blueprint.route('/<int:rowid>/update-cheque', methods=['get', 'post'])
-@roles_required('Manager')  # Use of @roles_required decorator
+@roles_required('Cashier')  # Use of @roles_required decorator
 def update_cheque(rowid):
     con = sql.connect('dbs/zlagoda.db')
     cur = con.cursor()
@@ -836,7 +839,7 @@ def update_store_product(rowid):
 
 
 @blueprint.route('/<int:rowid>/update-customer', methods=['get', 'post'])
-@roles_required('Manager')  # Use of @roles_required decorator
+@roles_required('Cashier')  # Use of @roles_required decorator
 def update_customer(rowid):
     con = sql.connect('dbs/zlagoda.db')
     cur = con.cursor()
@@ -1348,6 +1351,13 @@ def consignment():
                 eid, form.producer.data, form.employee.data, form.upc.data, form.signature_date.data,
                 form.quantity.data,
                 form.price.data))
+            #закуп. ціна + закуп. ціна * 0,3 + 0,2 * (закуп. ціна + закуп. ціна * 0,3).
+            new_price = round(1.56*float(form.price.data),2)
+            cur.execute("SELECT PRODUCTS_NUMBER FROM STORE_PRODUCT WHERE UPC=?",(form.upc.data,))
+            number = cur.fetchall()[0][0]
+            cur.execute('''UPDATE STORE_PRODUCT
+                           SET SELLING_PRICE = ?, PRODUCTS_NUMBER = ?
+                           WHERE UPC=?''', (new_price, number+form.quantity.data, form.upc.data))
             con.commit()
             cur.close()
             session.pop('_flashes', None)
@@ -1393,6 +1403,17 @@ def return_contract():
             con = sql.connect('dbs/zlagoda.db')
             con.row_factory = sql.Row
             cur = con.cursor()
+            cur.execute("SELECT PRODUCTS_NUMBER FROM STORE_PRODUCT WHERE UPC=?", (form.upc.data,))
+            number = cur.fetchall()[0][0]- form.quantity.data
+            if number < 0:
+                flash('Result quantity of product after returning must be more than 0', 'danger')
+                return render_template('form.html', form=form, title='Add Return Contract')
+            cur.execute('''SELECT PURCHASE_PRICE FROM CONSIGNMENT
+            WHERE UPC=? AND SIGNATURE_DATE IN (SELECT MAX(SIGNATURE_DATE)
+            FROM CONSIGNMENT WHERE UPC=?
+            )''', (form.upc.data, form.upc.data))
+            price = cur.fetchall()[0][0]
+
             cur.execute("SELECT CONTRACT_NUMBER FROM RETURN_CONTRACT")
             result = cur.fetchall()
             num = random.randint(1, 10000)
@@ -1406,7 +1427,10 @@ def return_contract():
                                                VALUES (?, ?, ?, ?, ?, ?, ?);''', (
                 eid, form.producer.data, form.employee.data, form.upc.data, form.signature_date.data,
                 form.quantity.data,
-                form.sum.data))
+                price*form.quantity.data))
+            cur.execute('''UPDATE STORE_PRODUCT
+                                                   SET PRODUCTS_NUMBER = ?
+                                                   WHERE UPC=?''', (number, form.upc.data))
             con.commit()
             cur.close()
             session.pop('_flashes', None)

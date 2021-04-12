@@ -178,9 +178,6 @@ class ReturnContractForm(FlaskForm):
 
     employee = SelectField(u'Employee', coerce=str, validators=[DataRequired()])
 
-    sum = StringField("Sum total: ", validators=[DataRequired(message="This field can not be empty"),
-                                                       validators.Regexp(r'(^\d+\.?\d+$)',
-                                                                         message="Incorrect price format")])
     quantity = StringField("Quantity: ", validators=[DataRequired(message="This field can not be empty"),
                                                      validators.Regexp(r'^\d+$')])
 

@@ -174,7 +174,6 @@ class ReturnContractForm(FlaskForm):
 
     upc = SelectField(u'UPC: ', coerce=str, validators=[DataRequired()])
 
-    producer = SelectField(u'Producer', coerce=str, validators=[DataRequired()])
 
     employee = SelectField(u'Employee', coerce=str, validators=[DataRequired()])
 

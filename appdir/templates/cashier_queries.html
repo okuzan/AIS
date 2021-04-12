@@ -7,9 +7,14 @@
         <tr>
             <td>{{ _1Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.cashier_1Query') }}">
-                    <td><input name="1QueryCName1" type="text"></td>
-                    <td><input name="1QueryCName2" type="text"></td>
-                    <td><input name="1QueryCName3" type="text"></td>
+                    <td><select name="1QueryCSelect">
+                        <option disabled>Виберіть касира</option>
+                        {% for row in _1QueryCRows %}
+                            <option value={{ row[0] }}>{{ row[1] }}</option>
+                        {% endfor %}
+                    </select></td>
+                    <td><input name="1QueryCName1" type="date" value="yyyy-mm-dd"></td>
+                    <td><input name="1QueryCName2" type="date" value="yyyy-mm-dd"></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -17,7 +22,12 @@
         <tr>
             <td>{{ _2Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.cashier_2Query') }}">
-                    <td><input name="2QueryCName" type="text"></td>
+                    <td><select name="2QueryCSelect">
+                        <option disabled>Виберіть номер чека</option>
+                        {% for row in _2QueryCRows %}
+                            <option value={{ row }}>{{ row }}</option>
+                        {% endfor %}
+                    </select></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -25,15 +35,20 @@
         <tr>
             <td>{{ _3Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.cashier_3Query') }}">
-                    <td><input name="3QueryCName" type="text"></td>
+                    <td><select name="3QueryCSelect">
+                        <option disabled>Виберіть покупця</option>
+                        {% for row in _3QueryCRows %}
+                            <option value={{ row }}>{{ row }}</option>
+                        {% endfor %}
+                    </select></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
         </tr>
         <tr>
             <td>{{ _4Query }}</td>
-                <form method="GET" action="{{ url_for('blueprint.cashier_4Query') }}">
-                    <td><input name="4QueryCName" type="text"></td>
+                <form method="POST" action="{{ url_for('blueprint.cashier_4Query') }}">
+                    <td><input name="4QueryCName" type="number" max="99" min="1"></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -41,7 +56,12 @@
         <tr>
             <td>{{ _5Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.cashier_5Query') }}">
-                    <td><input name="5QueryCName" type="text"></td>
+                    <td><select name="5QueryCSelect">
+                        <option disabled>Виберіть категорію</option>
+                        {% for row in _5QueryCRows %}
+                            <option value={{ row }}>{{ row }}</option>
+                        {% endfor %}
+                    </select></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -56,8 +76,18 @@
         <tr>
             <td>{{ _7Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.cashier_7Query') }}">
-                    <td><input name="7QueryCName1" type="text"></td>
-                    <td><input name="7QueryCName2" type="text"></td>
+                    <td>
+                        <select name="7QueryCSelect1">
+                            <option selected value="Кількість одиниць">Кількість одиниць</option>
+                            <option value="Назва">Назва</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="7QueryCSelect2">
+                            <option selected value="ASC">За зростанням</option>
+                            <option value="DESC">За спаданням</option>
+                        </select>
+                    </td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -65,8 +95,18 @@
         <tr>
             <td>{{ _8Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.cashier_8Query') }}">
-                    <td><input name="8QueryCName1" type="text"></td>
-                    <td><input name="8QueryCName2" type="text"></td>
+                    <td>
+                        <select name="8QueryCSelect1">
+                            <option selected value="Кількість одиниць">Кількість одиниць</option>
+                            <option value="Назва">Назва</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="8QueryCSelect2">
+                            <option selected value="ASC">За зростанням</option>
+                            <option value="DESC">За спаданням</option>
+                        </select>
+                    </td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -74,7 +114,12 @@
         <tr>
             <td>{{ _9Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.cashier_9Query') }}">
-                    <td><input name="9QueryCName" type="text"></td>
+                    <td><select name="9QueryCSelect">
+                        <option disabled>Виберіть номер чека</option>
+                        {% for row in _9QueryCRows %}
+                            <option value={{ row }}>{{ row }}</option>
+                        {% endfor %}
+                    </select></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -82,7 +127,12 @@
         <tr>
             <td>{{ _10Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.cashier_10Query') }}">
-                    <td><input name="10QueryCName" type="text"></td>
+                    <td><select name="10QueryCSelect">
+                        <option disabled>Виберіть UPC</option>
+                        {% for row in _10QueryCRows %}
+                            <option value={{ row }}>{{ row }}</option>
+                        {% endfor %}
+                    </select></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -90,7 +140,12 @@
         <tr>
             <td>{{ _11Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.cashier_11Query') }}">
-                    <td><input name="11QueryCName" type="text"></td>
+                    <td><select name="11QueryCSelect">
+                        <option disabled>Виберіть касира</option>
+                        {% for row in _11QueryCRows %}
+                            <option value={{ row[0] }}>{{ row[0] }}({{ row[1] }})</option>
+                        {% endfor %}
+                    </select></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>

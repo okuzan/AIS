@@ -985,32 +985,108 @@ def cashier_queries():
     _9Query = 'За номером чека скласти список усіх товарів, інформація про продаж яких є у цьому чеку'
     _10Query = 'За UPC-товару знайти ціну продажу товару, кількість наявних одиниць товару'
     _11Query = 'За ID_працівника знайти всю інформацію про себе'
-    return render_template('cashier_queries.html', tablename=tablename, _1Query=_1Query,
-                           _2Query=_2Query,
-                           _3Query=_3Query,
+
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+
+        # 1 Query
+        toExec = "SELECT ID_EMPLOYEE, EMPL_SURNAME FROM EMPLOYEE WHERE ROLE='cashier' ORDER BY EMPL_SURNAME"
+        cur.execute(toExec)
+        names = [description[0] for description in cur.description]
+        tmp = cur.fetchall()
+        _1QueryCRows = []
+        for i in range(0, len(tmp)):
+            _1QueryCRows.append((tmp[i][names[0]], tmp[i][names[1]]))
+
+        # 2 Query
+        toExec = "SELECT CHECK_NUMBER FROM CHEQUE ORDER BY CHECK_NUMBER DESC"
+        cur.execute(toExec)
+        names = [description[0] for description in cur.description]
+        tmp = cur.fetchall()
+        _2QueryCRows = []
+        for i in range(0, len(tmp)):
+            _2QueryCRows.append(tmp[i][names[0]])
+
+        # 3 Query
+        toExec = "SELECT CUST_SURNAME FROM CUSTOMER_CARD ORDER BY CUST_SURNAME"
+        cur.execute(toExec)
+        names = [description[0] for description in cur.description]
+        tmp = cur.fetchall()
+        _3QueryCRows = []
+        for i in range(0, len(tmp)):
+            _3QueryCRows.append(tmp[i][names[0]])
+
+        # 5 Query
+        toExec = "SELECT CATEGORY_NAME FROM CATEGORY ORDER BY CATEGORY_NAME"
+        cur.execute(toExec)
+        names = [description[0] for description in cur.description]
+        tmp = cur.fetchall()
+        _5QueryCRows = []
+        for i in range(0, len(tmp)):
+            _5QueryCRows.append(tmp[i][names[0]])
+
+        # 9 Query
+        toExec = "SELECT CHECK_NUMBER FROM CHEQUE ORDER BY CHECK_NUMBER DESC"
+        cur.execute(toExec)
+        names = [description[0] for description in cur.description]
+        tmp = cur.fetchall()
+        _9QueryCRows = []
+        for i in range(0, len(tmp)):
+            _9QueryCRows.append(tmp[i][names[0]])
+
+        # 10 Query
+        toExec = "SELECT UPC FROM STORE_PRODUCT ORDER BY UPC"
+        cur.execute(toExec)
+        names = [description[0] for description in cur.description]
+        tmp = cur.fetchall()
+        _10QueryCRows = []
+        for i in range(0, len(tmp)):
+            _10QueryCRows.append(tmp[i][names[0]])
+
+        # 11 Query
+        toExec = "SELECT ID_EMPLOYEE, EMPL_SURNAME FROM EMPLOYEE WHERE ROLE='cashier' ORDER BY EMPL_SURNAME"
+        cur.execute(toExec)
+        names = [description[0] for description in cur.description]
+        tmp = cur.fetchall()
+        _11QueryCRows = []
+        for i in range(0, len(tmp)):
+            _11QueryCRows.append((tmp[i][names[0]], tmp[i][names[1]]))
+
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+
+    return render_template('cashier_queries.html', tablename=tablename, _1Query=_1Query, _1QueryCRows=_1QueryCRows,
+                           _2Query=_2Query, _2QueryCRows=_2QueryCRows,
+                           _3Query=_3Query, _3QueryCRows=_3QueryCRows,
                            _4Query=_4Query,
-                           _5Query=_5Query,
+                           _5Query=_5Query, _5QueryCRows=_5QueryCRows,
                            _6Query=_6Query,
                            _7Query=_7Query,
                            _8Query=_8Query,
-                           _9Query=_9Query,
-                           _10Query=_10Query,
-                           _11Query=_11Query)
+                           _9Query=_9Query, _9QueryCRows=_9QueryCRows,
+                           _10Query=_10Query, _10QueryCRows=_10QueryCRows,
+                           _11Query=_11Query, _11QueryCRows=_11QueryCRows)
 
 
 @blueprint.route('/1QueryC', methods=['get', 'post'])
 @roles_required('Cashier')
 def cashier_1Query():
-    cashier_id = request.form['1QueryCName1']
-    date_from = request.form['1QueryCName2']
-    date_to = request.form['1QueryCName3']
+    cashier_id = request.form['1QueryCSelect']
+    date_from = request.form['1QueryCName1']
+    date_to = request.form['1QueryCName2']
     tablename = 'Скласти список чеків,  видрукуваних даним касиром за певний період часу'
     try:
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
         cur.execute(
-            "SELECT * FROM CHEQUE WHERE PRINT_DATE BETWEEN {} AND {} AND ID_EMPLOYEE={}".format(date_from, date_to,
+            "SELECT * FROM CHEQUE WHERE PRINT_DATE BETWEEN '{}' AND '{}' AND ID_EMPLOYEE='{}'".format(date_from, date_to,
                                                                                                 cashier_id))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
@@ -1026,7 +1102,7 @@ def cashier_1Query():
 @blueprint.route('/2QueryC', methods=['get', 'post'])
 @roles_required('Cashier')
 def cashier_2Query():
-    check_number = request.form['2QueryCName']
+    check_number = request.form['2QueryCSelect']
     tablename = 'За номером чеку вивести усю інформацію про даний чек'
     try:
         con = sql.connect('dbs/zlagoda.db')
@@ -1037,7 +1113,7 @@ def cashier_2Query():
                       FROM CHEQUE INNER JOIN SALE ON CHEQUE.CHECK_NUMBER=SALE.CHECK_NUMBER
                       INNER JOIN STORE_PRODUCT ON SALE.UPC=STORE_PRODUCT.UPC
                       INNER JOIN PRODUCT ON STORE_PRODUCT.ID_PRODUCT=PRODUCT.ID_PRODUCT
-                      WHERE CHEQUE.CHECK_NUMBER={}'''.format(check_number))
+                      WHERE CHEQUE.CHECK_NUMBER=?''', (check_number,))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -1052,7 +1128,7 @@ def cashier_2Query():
 @blueprint.route('/3QueryC', methods=['get', 'post'])
 @roles_required('Cashier')
 def cashier_3Query():
-    surname = request.form['3QueryCName']
+    surname = request.form['3QueryCSelect']
     tablename = 'Вивести усю інформацію про покупця з певним прізвищем, що має карту клієнта'
     try:
         con = sql.connect('dbs/zlagoda.db')
@@ -1060,7 +1136,7 @@ def cashier_3Query():
         cur = con.cursor()
         cur.execute('''SELECT *
                       FROM CUSTOMER_CARD
-                      WHERE CUST_SURNAME=?'''.format(surname))
+                      WHERE CUST_SURNAME=?''', (surname,))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -1081,7 +1157,7 @@ def cashier_4Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT * FROM CUSTOMER_CARD WHERE PERCENT={}".format(percent))
+        cur.execute("SELECT * FROM CUSTOMER_CARD WHERE PERCENT='{}'".format(percent))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -1096,7 +1172,7 @@ def cashier_4Query():
 @blueprint.route('/5QueryC', methods=['get', 'post'])
 @roles_required('Cashier')
 def cashier_5Query():
-    category_name = request.form['5QueryCName']
+    category_name = request.form['5QueryCSelect']
     tablename = 'Скласти список товарів, що належать певній категорії, відсортованих за назвою'
     try:
         con = sql.connect('dbs/zlagoda.db')
@@ -1140,8 +1216,14 @@ def cashier_6Query():
 @blueprint.route('/7QueryC', methods=['get', 'post'])
 @roles_required('Cashier')
 def cashier_7Query():
-    order_by = request.form['7QueryCName1']  # quan or name
-    sortType = request.form['7QueryCName2']  # ASC or DESC
+    if request.form['7QueryCSelect1'] == 'Кількість одиниць':
+        order_by = 'PRODUCTS_NUMBER'
+    else:
+        order_by = 'UPC'
+    if request.form['7QueryCSelect2'] == 'ASC':
+        sortType = 'ASC'
+    else:
+        sortType = 'DESC'
     tablename = 'Скласти список усіх акційних товарів, відсортованих за кількістю одиниць товару/ за назвою'
     try:
         con = sql.connect('dbs/zlagoda.db')
@@ -1162,8 +1244,14 @@ def cashier_7Query():
 @blueprint.route('/8QueryC', methods=['get', 'post'])
 @roles_required('Cashier')
 def cashier_8Query():
-    order_by = request.form['8QueryCName1']  # quan or name
-    sortType = request.form['8QueryCName2']  # ASC or DESC
+    if request.form['8QueryCSelect1'] == 'Кількість одиниць':
+        order_by = 'PRODUCTS_NUMBER'
+    else:
+        order_by = 'UPC'
+    if request.form['8QueryCSelect2'] == 'ASC':
+        sortType = 'ASC'
+    else:
+        sortType = 'DESC'
     tablename = 'Скласти список усіх не акційних товарів, відсортованих за кількістю одиниць товару/ за назвою'
     try:
         con = sql.connect('dbs/zlagoda.db')
@@ -1184,17 +1272,17 @@ def cashier_8Query():
 @blueprint.route('/9QueryC', methods=['get', 'post'])
 @roles_required('Cashier')
 def cashier_9Query():
-    check_num = request.form['9QueryCName']
+    check_num = request.form['9QueryCSelect']
     tablename = 'За номером чека скласти список усіх товарів, інформація про продаж яких є у цьому чеку'
     try:
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute('''SELECT PRODUCT_NAME, CHARACTERISTICS, CATEGORY_NAME, SALE.UPC, PRODUCT_NUMBER, SELLING_PRICE
+        cur.execute('''SELECT PRODUCT_NAME, CHARACTERISTICS, CATEGORY_NAME, SALE.UPC, PRODUCT_NUMBER, SALE.SELLING_PRICE
                       FROM SALE INNER JOIN STORE_PRODUCT ON SALE.UPC=STORE_PRODUCT.UPC
                       INNER JOIN PRODUCT ON STORE_PRODUCT.ID_PRODUCT=PRODUCT.ID_PRODUCT
                       INNER JOIN CATEGORY ON PRODUCT.CATEGORY_NUMBER=CATEGORY.CATEGORY_NUMBER
-                      WHERE SALE.CHECK_NUMBER={}'''.format(check_num))
+                      WHERE SALE.CHECK_NUMBER=?''', (check_num,))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -1209,14 +1297,14 @@ def cashier_9Query():
 @blueprint.route('/10QueryC', methods=['get', 'post'])
 @roles_required('Cashier')
 def cashier_10Query():
-    upc = request.form['10QueryCName']
+    upc = request.form['10QueryCSelect']
     tablename = 'За UPC-товару знайти ціну продажу товару, кількість наявних одиниць товару, назву та характеристики товару'
     try:
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
         cur.execute(
-            "SELECT STORE_PRODUCT.UPC, STORE_PRODUCT.ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PRODUCT_NAME, CHARACTERISTICS FROM STORE_PRODUCT INNER JOIN PRODUCT ON PRODUCT.ID_PRODUCT=STORE_PRODUCT.ID_PRODUCT WHERE UPC={}".format(
+            "SELECT STORE_PRODUCT.UPC, STORE_PRODUCT.ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PRODUCT_NAME, CHARACTERISTICS FROM STORE_PRODUCT INNER JOIN PRODUCT ON PRODUCT.ID_PRODUCT=STORE_PRODUCT.ID_PRODUCT WHERE UPC='{}'".format(
                 upc))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
@@ -1232,7 +1320,7 @@ def cashier_10Query():
 @blueprint.route('/11QueryC', methods=['get', 'post'])
 @roles_required('Cashier')
 def cashier_11Query():
-    id = request.form['11QueryCName']
+    id = request.form['11QueryCSelect']
     tablename = 'За ID_працівника знайти всю інформацію про себе'
     try:
         con = sql.connect('dbs/zlagoda.db')
@@ -1240,8 +1328,8 @@ def cashier_11Query():
         cur = con.cursor()
         cur.execute('''SELECT *
                       FROM EMPLOYEE 
-                      WHERE ID_EMPLOYEE={}
-                   '''.format(id))
+                      WHERE ID_EMPLOYEE=?
+                   ''', (id,))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()

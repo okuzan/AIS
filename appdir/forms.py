@@ -190,11 +190,15 @@ class SaleForm(FlaskForm):
     quantity = StringField("Quantity: ", validators=[DataRequired(message="This field can not be empty"),
                                                      validators.Regexp(r'^\d+$')])
 
+    check_number = StringField("Check number: ", validators=[DataRequired(message="This field can not be empty"),
+                                                     validators.Regexp(r'^\d+$')], render_kw = {'readonly': True})
+
+
 
 class CheckForm(FlaskForm):
     employee = SelectField(u'Employee', coerce=str, validators=[DataRequired()])
     card = SelectField(u'Card', coerce=str)
-    sales = FieldList(FormField(SaleForm), min_entries=0)
+    sales = FieldList(FormField(SaleForm), min_entries=1)
     submit = SubmitField('Submit')
 
 

@@ -8,6 +8,13 @@
         border: 2px solid green;
     }
 
+    body {
+        color: #536482;
+        background-color: white;
+        zoom: 90%;
+    }
+
+
 </style>
 {% extends "base.html" %}
 
@@ -16,7 +23,7 @@
     <form action="/producer">
         <button style="float: right; position: absolute" type="submit" class="btn btn-success center">ADD</button>
     </form>
-    <h2 class="text-center m-3">{{ tablenameProducer }}</h2>
+    <h2 class="text-center m-3 container-fluid">{{ tablenameProducer }}</h2>
     <table class="table table-striped">
         <thead>
 
@@ -98,7 +105,7 @@
         <button style="float: right; position: absolute" type="submit" class="btn btn-success center">ADD</button>
     </form>
     <h2 class="text-center m-3">{{ tablenameEmployee }}</h2>
-    <table class="table table-striped">
+    <table class="table table-striped container-fluid">
         <thead>
         {% for nameEmployee in namesEmployee %}
             <td><strong>{{ nameEmployee }}</strong></td>
@@ -192,7 +199,7 @@
                 {% endfor %}
                 <td>
                     <form method=get
-                          action="{{ url_for('blueprint.update_sale',
+                          action="{{ url_for('blueprint.update_customer',
                       rowid=loop.index,
                                             key=namesSale[0],
 
@@ -235,8 +242,7 @@
                     <form method=get
                           action="{{ url_for('blueprint.update_cheque',
                       rowid=loop.index,
-                                            key= namesCheque[0],
-
+                      key= namesCheque[0],
                       table=tablenameCheque) }}">
                         <button>UPD</button>
                     </form>
@@ -419,5 +425,9 @@
     </table>
 
     <a href="/">Go back to home page</a>
+    <br>
+    <br>
+    {#    onclick="window.print();return false;" />#}
+    <button type="button" class="btn btn-info" onclick="window.print()">Print</button>
 
 {% endblock %}

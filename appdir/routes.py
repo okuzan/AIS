@@ -531,15 +531,9 @@ def update_contract(rowid):
     cur = con.cursor()
     cur.execute("SELECT * FROM RETURN_CONTRACT LIMIT 1 OFFSET " + (str(rowid - 1))),
     row = cur.fetchall()[0]
-    print(rowid)
-    print(row)
     form = ReturnContractForm()
-    form.upc.default =[(row[0], "(" + str(row[0]) + ") " ) ]
-    form.process()
-    cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC FROM EMPLOYEE WHERE ID_EMPLOYEE=?''', (row[2],))
-    cur_empl = cur.fetchall()[0]
-    form.employee.default = [(cur_empl[0], "(" + str(cur_empl[0]) + ") " + cur_empl[1] + " "+ cur_empl[2]+ " "+ cur_empl[3]) ]
-    form.process()
+    form.upc.data =row[0]
+    form.employee.data = row[2]
     form.quantity.data = str(row[5])
     form.signature_date.data = datetime.strptime(str(row[4]), '%Y-%m-%d')
 
@@ -592,9 +586,9 @@ def update_consignment(rowid):
     print(rowid)
     print(row)
     form = ConsignmentForm()
-    # form.upc = row[1]
-    # form.producer = row[2]
-    # form.employee = row[3]
+    form.upc.data = row[3]
+    form.producer.data = row[1]
+    form.employee.data = row[2]
     form.signature_date.data = datetime.strptime(str(row[4]), '%Y-%m-%d')
     form.quantity.data = str(row[5])
     form.price.data = str(row[6])
@@ -732,9 +726,9 @@ def update_product(rowid):
     result = cur.fetchall()
     groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
     form.category_number.choices = groups_list
-    # form.category_number = row[1]
+    form.category_number.data = row[1]
     form.product_name.data = row[2]
-    form.characteristics.data = row[2]
+    form.characteristics.data = row[3]
 
     if form.validate_on_submit():
         try:
@@ -788,21 +782,23 @@ def update_store_product(rowid):
     form.upc_prom.choices = [('-1','---')]+groups_list
 
     # form.category_number = row[1]
+    print(row)
     form.upc_code.data = row[0]
-    form.price.data = str(row[3])
     form.quantity.data = str(row[4])
+    form.product_number.data=row[2]
+    if str(row[1])!='None':
+        form.upc_prom.data=row[1]
     form.promotional.data = str(row[5])
 
     if form.is_submitted():
         try:
             if form.upc_prom.data.__len__() < 12:
                 cur.execute('''UPDATE STORE_PRODUCT
-                                            SET UPC = ?, UPC_PROM = NULL, ID_PRODUCT = ?, SELLING_PRICE = ?,
+                                            SET UPC = ?, UPC_PROM = NULL, ID_PRODUCT = ?, 
                                              PRODUCTS_NUMBER = ?, PROMOTIONAL_PRODUCT = ? 
                                             WHERE UPC = (SELECT UPC FROM STORE_PRODUCT LIMIT 1 OFFSET ?)''', (
                     request.form['upc_code'],
                     request.form['product_number'],
-                    request.form['price'],
                     request.form['quantity'],
                     request.form['promotional'],
                     str(rowid - 1)))

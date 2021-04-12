@@ -1,14 +1,17 @@
 {% extends "base.html" %}
 {% block content %}
-      {% for category, message in get_flashed_messages(with_categories=True) %}
-      <div class="alert alert-{{ category }}" role="alert">
-          {{ message}}
-</div>
-{% endfor %}
-    <h2>{%trans%}Home page{%endtrans%}</h2>
-    <p><a href={{ url_for('blueprint.login_page') }}>{%trans%}Sign in{%endtrans%}</a></p>
-    <p><a href={{ url_for('blueprint.home_page') }}>{%trans%}Home Page{%endtrans%}</a> (accessible to anyone)</p>
-    <p><a href={{ url_for('blueprint.member_page') }}>{%trans%}Member Page{%endtrans%}</a> (cashiers only)</p>
-    <p><a href={{ url_for('blueprint.admin_page') }}>{%trans%}Admin Page{%endtrans%}</a> (managers only)</p>
-    <p><a href={{ url_for('user.logout') }}>{%trans%}Sign out{%endtrans%}</a></p>
+    <div class="container">
+        {% for category, message in get_flashed_messages(with_categories=True) %}
+            <div class="alert alert-{{ category }}" role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+        <h2>{% trans %}Home page{% endtrans %}</h2>
+        <p><a href={{ url_for('blueprint.login_page') }}>{% trans %}Sign in{% endtrans %}</a></p>
+        <p><a href={{ url_for('blueprint.home_page') }}>{% trans %}Home Page{% endtrans %}</a> (accessible to anyone)
+        </p>
+        <p><a href={{ url_for('blueprint.member_page') }}>{% trans %}Member Page{% endtrans %}</a> (cashiers only)</p>
+        <p><a href={{ url_for('blueprint.admin_page') }}>{% trans %}Admin Page{% endtrans %}</a> (managers only)</p>
+        <p><a href={{ url_for('user.logout') }}>{% trans %}Sign out{% endtrans %}</a></p>
+    </div>
 {% endblock %}

@@ -14,7 +14,12 @@
         <tr>
             <td>{{ _2Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_2Query') }}">
-                    <td><input name="2QueryName" type="text"></td>
+                    <td><select name="2QuerySelect">
+                        <option disabled>Виберіть категорію</option>
+                        {% for row in _2QueryRows %}
+                            <option value={{ row }}>{{ row }}</option>
+                        {% endfor %}
+                    </select></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -22,7 +27,12 @@
         <tr>
             <td>{{ _3Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_3Query') }}">
-                    <td><input name="3QueryName" type="text"></td>
+                    <td><select name="3QuerySelect">
+                        <option disabled>Виберіть працівника</option>
+                        {% for row in _3QueryRows %}
+                            <option value={{ row }}>{{ row }}</option>
+                        {% endfor %}
+                    </select></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -36,11 +46,15 @@
         </tr>
         <tr>
             <td>{{ _5Query }}</td>
-                <form method="POST" action="{{ url_for('blueprint.admin_5Query') }}">
-                    <td><input name="5QueryName" type="text"></td>
+            <form method="POST" action="{{ url_for('blueprint.admin_5Query') }}">
+                    <td><select name="5QuerySelect">
+                        <option disabled>Виберіть виробника</option>
+                        {% for row in _5QueryRows %}
+                            <option value={{ row }}>{{ row }}</option>
+                        {% endfor %}
+                    </select></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
-            </td>
         </tr>
         <tr>
             <td>{{ _6Query }}</td>
@@ -59,7 +73,12 @@
         <tr>
             <td>{{ _8Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_8Query') }}">
-                    <td><input name="8QueryName" type="text"></td>
+                    <td><select name="8QuerySelect">
+                        <option disabled>Виберіть категорію</option>
+                        {% for row in _8QueryRows %}
+                            <option value={{ row }}>{{ row }}</option>
+                        {% endfor %}
+                    </select></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -67,7 +86,12 @@
         <tr>
             <td>{{ _9Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_9Query') }}">
-                    <td><input name="9QueryName" type="text"></td>
+                    <td><select name="9QuerySelect">
+                        <option disabled>Виберіть продукт</option>
+                        {% for row in _9QueryRows %}
+                            <option value={{ row[0] }}>{{ row[1] }}</option>
+                        {% endfor %}
+                    </select></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -75,7 +99,12 @@
         <tr>
             <td>{{ _10Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_10Query') }}">
-                    <td><input name="10QueryName" type="text"></td>
+                    <td><select name="10QuerySelect">
+                        <option disabled>Виберіть UPC</option>
+                        {% for row in _10QueryRows %}
+                            <option value={{ row }}>{{ row }}</option>
+                        {% endfor %}
+                    </select></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -83,8 +112,18 @@
         <tr>
             <td>{{ _11Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_11Query') }}">
-                    <td><input name="11QueryName1" type="text"></td>
-                    <td><input name="11QueryName2" type="text"></td>
+                    <td>
+                        <select name="11QuerySelect1">
+                            <option selected value="Кількість одиниць">Кількість одиниць</option>
+                            <option value="Назва">Назва</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="11QuerySelect2">
+                            <option selected value="ASC">За зростанням</option>
+                            <option value="DESC">За спаданням</option>
+                        </select>
+                    </td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -92,8 +131,18 @@
         <tr>
             <td>{{ _12Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_12Query') }}">
-                    <td><input name="12QueryName1" type="text"></td>
-                    <td><input name="12QueryName2" type="text"></td>
+                    <td>
+                        <select name="12QuerySelect1">
+                            <option selected value="Кількість одиниць">Кількість одиниць</option>
+                            <option value="Назва">Назва</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="12QuerySelect2">
+                            <option selected value="ASC">За зростанням</option>
+                            <option value="DESC">За спаданням</option>
+                        </select>
+                    </td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -101,9 +150,14 @@
         <tr>
             <td>{{ _13Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_13Query') }}">
-                    <td><input name="13QueryName1" type="text"></td>
-                    <td><input name="13QueryName2" type="text"></td>
-                    <td><input name="13QueryName3" type="text"></td>
+                    <td><select name="13QuerySelect">
+                        <option disabled>Виберіть товар</option>
+                        {% for row in _13QueryRows %}
+                            <option value={{ row[0] }}>{{ row[1] }}</option>
+                        {% endfor %}
+                    </select></td>
+                    <td><input name="13QueryName1" type="date" value="yyyy-mm-dd"></td>
+                    <td><input name="13QueryName2" type="date" value="yyyy-mm-dd"></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -111,9 +165,14 @@
         <tr>
             <td>{{ _14Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_14Query') }}">
-                    <td><input name="14QueryName1" type="text"></td>
-                    <td><input name="14QueryName2" type="text"></td>
-                    <td><input name="14QueryName3" type="text"></td>
+                    <td><select name="14QuerySelect">
+                        <option disabled>Виберіть виробника</option>
+                        {% for row in _14QueryRows %}
+                            <option value={{ row[0] }}>{{ row[1] }}</option>
+                        {% endfor %}
+                    </select></td>
+                    <td><input name="14QueryName1" type="date" value="yyyy-mm-dd"></td>
+                    <td><input name="14QueryName2" type="date" value="yyyy-mm-dd"></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -121,8 +180,8 @@
         <tr>
             <td>{{ _15Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_15Query') }}">
-                    <td><input name="15QueryName1" type="text"></td>
-                    <td><input name="15QueryName2" type="text"></td>
+                    <td><input name="15QueryName1" type="date" value="yyyy-mm-dd"></td>
+                    <td><input name="15QueryName2" type="date" value="yyyy-mm-dd"></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -130,9 +189,14 @@
         <tr>
             <td>{{ _16Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_16Query') }}">
-                    <td><input name="16QueryName1" type="text"></td>
-                    <td><input name="16QueryName2" type="text"></td>
-                    <td><input name="16QueryName3" type="text"></td>
+                    <td><select name="16QuerySelect">
+                        <option disabled>Виберіть UPC</option>
+                        {% for row in _16QueryRows %}
+                            <option value={{ row[0] }}>{{ row[1] }}</option>
+                        {% endfor %}
+                    </select></td>
+                    <td><input name="16QueryName1" type="date" value="yyyy-mm-dd"></td>
+                    <td><input name="16QueryName2" type="date" value="yyyy-mm-dd"></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -140,9 +204,14 @@
         <tr>
             <td>{{ _17Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_17Query') }}">
-                    <td><input name="17QueryName1" type="text"></td>
-                    <td><input name="17QueryName2" type="text"></td>
-                    <td><input name="17QueryName3" type="text"></td>
+                    <td><select name="17QuerySelect">
+                        <option disabled>Виберіть UPC</option>
+                        {% for row in _17QueryRows %}
+                            <option value={{ row[0] }}>{{ row[1] }}</option>
+                        {% endfor %}
+                    </select></td>
+                    <td><input name="17QueryName1" type="date" value="yyyy-mm-dd"></td>
+                    <td><input name="17QueryName2" type="date" value="yyyy-mm-dd"></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -150,9 +219,14 @@
         <tr>
             <td>{{ _18Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_18Query') }}">
-                    <td><input name="18QueryName1" type="text"></td>
-                    <td><input name="18QueryName2" type="text"></td>
-                    <td><input name="18QueryName3" type="text"></td>
+                    <td><select name="18QuerySelect">
+                        <option disabled>Виберіть виробника</option>
+                        {% for row in _18QueryRows %}
+                            <option value={{ row[0] }}>{{ row[1] }}</option>
+                        {% endfor %}
+                    </select></td>
+                    <td><input name="18QueryName1" type="date" value="yyyy-mm-dd"></td>
+                    <td><input name="18QueryName2" type="date" value="yyyy-mm-dd"></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -160,8 +234,8 @@
         <tr>
             <td>{{ _19Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_19Query') }}">
-                    <td><input name="19QueryName1" type="text"></td>
-                    <td><input name="19QueryName2" type="text"></td>
+                    <td><input name="19QueryName1" type="date" value="yyyy-mm-dd"></td>
+                    <td><input name="19QueryName2" type="date" value="yyyy-mm-dd"></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -169,9 +243,14 @@
         <tr>
             <td>{{ _20Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_20Query') }}">
-                    <td><input name="20QueryName1" type="text"></td>
-                    <td><input name="20QueryName2" type="text"></td>
-                    <td><input name="20QueryName3" type="text"></td>
+                    <td><select name="20QuerySelect">
+                        <option disabled>Виберіть UPC</option>
+                        {% for row in _20QueryRows %}
+                            <option value={{ row[0] }}>{{ row[1] }}</option>
+                        {% endfor %}
+                    </select></td>
+                    <td><input name="20QueryName1" type="date" value="yyyy-mm-dd"></td>
+                    <td><input name="20QueryName2" type="date" value="yyyy-mm-dd"></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -179,9 +258,14 @@
         <tr>
             <td>{{ _21Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_21Query') }}">
-                    <td><input name="21QueryName1" type="text"></td>
-                    <td><input name="21QueryName2" type="text"></td>
-                    <td><input name="21QueryName3" type="text"></td>
+                    <td><select name="21QuerySelect">
+                        <option disabled>Виберіть касира</option>
+                        {% for row in _21QueryRows %}
+                            <option value={{ row[0] }}>{{ row[1] }}</option>
+                        {% endfor %}
+                    </select></td>
+                    <td><input name="21QueryName1" type="date" value="yyyy-mm-dd"></td>
+                    <td><input name="21QueryName2" type="date" value="yyyy-mm-dd"></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -189,8 +273,8 @@
         <tr>
             <td>{{ _22Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_22Query') }}">
-                    <td><input name="22QueryName1" type="text"></td>
-                    <td><input name="22QueryName2" type="text"></td>
+                    <td><input name="22QueryName1" type="date" value="yyyy-mm-dd"></td>
+                    <td><input name="22QueryName2" type="date" value="yyyy-mm-dd"></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -198,9 +282,14 @@
         <tr>
             <td>{{ _23Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_23Query') }}">
-                    <td><input name="23QueryName1" type="text"></td>
-                    <td><input name="23QueryName2" type="text"></td>
-                    <td><input name="23QueryName3" type="text"></td>
+                    <td><select name="23QuerySelect">
+                        <option disabled>Виберіть товар</option>
+                        {% for row in _23QueryRows %}
+                            <option value={{ row[0] }}>{{ row[1] }}</option>
+                        {% endfor %}
+                    </select></td>
+                    <td><input name="23QueryName1" type="date" value="yyyy-mm-dd"></td>
+                    <td><input name="23QueryName2" type="date" value="yyyy-mm-dd"></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -215,7 +304,7 @@
         <tr>
             <td>{{ _25Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_25Query') }}">
-                    <td><input name="25QueryName" type="text"></td>
+                    <td><input name="25QueryName" type="number" max="99" min="1"></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>
@@ -223,7 +312,12 @@
         <tr>
             <td>{{ _26Query }}</td>
                 <form method="POST" action="{{ url_for('blueprint.admin_26Query') }}">
-                    <td><input name="26QueryName" type="text"></td>
+                    <td><select name="26QuerySelect">
+                        <option disabled>Виберіть UPC</option>
+                        {% for row in _26QueryRows %}
+                            <option value={{ row }}>{{ row }}</option>
+                        {% endfor %}
+                    </select></td>
                     <td><input type="submit" value="Submit"></td>
                 </form>
             </td>

@@ -11,25 +11,18 @@
   <h3>{{ title }}</h3>
   <hr>
       <form action="" method="post">
+           {{ form.hidden_tag() }}
     {{ form.employee.name }}
            {{ form.employee}}
           {{ form.card.name }}
     {{ form.card }}
-          <hr>
-              {{ form.sum.name }}
-           {{ form.sum }}
-           {{ form.vat.name }}
-           {{ form.vat }}
-           {{ form.signature_date.name }}
-           {{ form.signature_date }}
-         <hr>
+
 
 
     <div id="sales"></div>
           <hr>
           <button type="button" id="addNewItemButton">Add Field</button>
           <hr>
-          {{ form.sales }}
     {{ form.submit }}
 
     </form>
@@ -49,9 +42,6 @@
     <div class="form-group  required">
 <label class="control-label" for="sales-`+fieldNum+`-upc_code">UPC: </label>
           <input class="form-control" id="sales-`+fieldNum+`-upc_code" name="sales-`+fieldNum+`-upc_code" required type="text" value="">
-  </div>
-    <div class="form-group  required"><label class="control-label" for="sales-`+fieldNum+`-sum">Sum total: </label>
-          <input class="form-control" id="sales-`+fieldNum+`-sum" name="sales-`+fieldNum+`-sum" required type="text" value="">
   </div>
     <div class="form-group  required"><label class="control-label" for="sales-`+fieldNum+`-quantity">Quantity: </label>
           <input class="form-control" id="sales-`+fieldNum+`-quantity" name="sales-`+fieldNum+`-quantity" required type="text" value="">

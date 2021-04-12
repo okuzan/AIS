@@ -160,7 +160,7 @@ def delete(table, key, rowid):
                     str(rowid)) + ")"),
     con.commit()
     cur.close()
-    return redirect('/admin/data')
+    return redirect('/admin_allData')
 
 
 @blueprint.route('/delete', methods=['get'])
@@ -175,7 +175,7 @@ def delete_page():
     namesProducer = [description[0] for description in cur.description]
     rowsProducer = cur.fetchall()
 
-    return redirect('/admin/data')
+    return redirect('/admin_allData')
 
 
 @roles_required('Manager')
@@ -535,9 +535,7 @@ def update_contract(rowid):
     print(row)
     form = ReturnContractForm()
     # form.upc = row[1]
-    # form.producer = row[2]
     # form.employee = row[3]
-    form.sum.data = str(row[6])
     form.quantity.data = str(row[5])
     form.signature_date.data = datetime.strptime(str(row[4]), '%Y-%m-%d')
 
@@ -633,6 +631,10 @@ def update_consignment(rowid):
                 request.form['quantity'],
                 request.form['price'],
                 str(rowid - 1)))
+            new_price = round(1.56 * float(form.price.data), 2)
+            cur.execute('''UPDATE STORE_PRODUCT
+                                       SET SELLING_PRICE = ?
+                                       WHERE UPC=?''', (new_price, form.upc.data))
             con.commit()
             cur.close()
             flash('Consignment was successfully updated', 'success')
@@ -675,7 +677,7 @@ def update_category(rowid):
 
 
 @blueprint.route('/<int:rowid>/update-cheque', methods=['get', 'post'])
-@roles_required('Manager')  # Use of @roles_required decorator
+@roles_required('Cashier')  # Use of @roles_required decorator
 def update_cheque(rowid):
     con = sql.connect('dbs/zlagoda.db')
     cur = con.cursor()
@@ -836,7 +838,7 @@ def update_store_product(rowid):
 
 
 @blueprint.route('/<int:rowid>/update-customer', methods=['get', 'post'])
-@roles_required('Manager')  # Use of @roles_required decorator
+@roles_required('Cashier')  # Use of @roles_required decorator
 def update_customer(rowid):
     con = sql.connect('dbs/zlagoda.db')
     cur = con.cursor()
@@ -875,15 +877,15 @@ def update_customer(rowid):
     return render_template('form.html', form=form, title='Update Customer Card')
 
 
-@blueprint.route('/form', methods=['get', 'post'])
+@blueprint.route('/check', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator
-def sample_form():
+def check_form():
     form = CheckForm()
     con = sql.connect('dbs/zlagoda.db')
     cur = con.cursor()
     cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC
                       FROM EMPLOYEE
-                      WHERE ROLE="manager"''')
+                      WHERE ROLE="cashier"''')
     result = cur.fetchall()
     groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
     form.employee.choices = groups_list
@@ -892,11 +894,79 @@ def sample_form():
                           FROM CUSTOMER_CARD''')
     result = cur.fetchall()
     groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
-    form.card.choices = [("", "---")] + groups_list
-    # if form.validate_on_submit():
-    #    if form.flist.data:
-    #        for item in form.flist.data:
-    # do stuff
+    form.card.choices = [("", "---")]+groups_list
+    if form.validate_on_submit():
+        try:
+            con = sql.connect('dbs/zlagoda.db')
+            con.row_factory = sql.Row
+            cur = con.cursor()
+            cur.execute("SELECT CHECK_NUMBER FROM CHEQUE")
+            result = cur.fetchall()
+            num = random.randint(1, 10000)
+            temp = []
+            for row in result:
+                temp.append(row[0])
+            while temp.__contains__('c' + str(num)):
+                num = random.randint(1, 10000)
+            max_id = 'c'+str(num)
+            sale_prices = []
+            date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            sum_total = 0
+            percent = 0
+            if form.card.data.__len__()>0:
+                cur.execute('''SELECT PERCENT 
+                             FROM CUSTOMER_CARD
+                             WHERE CARD_NUMBER=?''', (form.card.data,))
+                result = cur.fetchall()
+                percent=result[0][0]
+            for s in form.sales.data:
+                cur.execute('''SELECT SELLING_PRICE, PRODUCTS_NUMBER
+                               FROM STORE_PRODUCT
+                               WHERE UPC=?''', (s['upc_code'],))
+                result = cur.fetchall()
+                if result.__len__()!=1:
+                    flash('Incorrect UPC', 'danger')
+                    return render_template('checkForm.html', form=form, title='Add check')
+                if result[0][1]<int(s['quantity']):
+                    flash('Incorrect Quantity', 'danger')
+                    return render_template('checkForm.html', form=form, title='Add check')
+                sale_prices=sale_prices+[(result[0][0], s['quantity'], s['upc_code'], result[0][1])]
+            for sale in sale_prices:
+                sum_total+=int(sale[1])*int(sale[0])
+            if percent != 0:
+                sum_total=0.01*(100-percent)*sum_total
+            sum_total=round(sum_total, 2)
+            vat = round(0.2 * sum_total / 1.2,2)
+            if form.card.data.__len__()>0:
+                cur.execute('''INSERT INTO CHEQUE(CHECK_NUMBER, ID_EMPLOYEE, CARD_NUMBER, PRINT_DATE, SUM_TOTAL, VAT)
+                                                              VALUES (?, ?, ?, ?, ?, ?);''', (max_id, form.employee.data,
+                                                                                              form.card.data, date, sum_total, vat))
+            else:
+                cur.execute('''INSERT INTO CHEQUE(CHECK_NUMBER, ID_EMPLOYEE, CARD_NUMBER, PRINT_DATE, SUM_TOTAL, VAT)
+                                                                              VALUES (?, ?, NULL, ?, ?, ?);''',
+                            (max_id, form.employee.data,
+                             date, sum_total, vat))
+            con.commit()
+            for sale in sale_prices:
+                cur.execute('''INSERT INTO SALE(UPC, CHECK_NUMBER, PRODUCT_NUMBER, SELLING_PRICE)
+                                                                                              VALUES (?, ?, ?, ?);''',
+                            (sale[2], max_id,
+                            sale[1], sale[0]))
+                cur.execute('''UPDATE STORE_PRODUCT
+                                          SET PRODUCTS_NUMBER = ?
+                                          WHERE UPC=?''', (int(sale[3])-int(sale[1]), sale[2]))
+            con.commit()
+            cur.close()
+            session.pop('_flashes', None)
+            flash('Check was successfully added', 'success')
+            return redirect(url_for('blueprint.check_form'))
+        except sql.Error as error:
+            session.pop('_flashes', None)
+            flash(error, 'danger')
+            return render_template('checkForm.html', form=form, title='Add check')
+        finally:
+            if (con):
+                con.close()
     return render_template('checkForm.html', form=form, title='Create check')
 
 
@@ -1286,6 +1356,13 @@ def consignment():
                 eid, form.producer.data, form.employee.data, form.upc.data, form.signature_date.data,
                 form.quantity.data,
                 form.price.data))
+            #закуп. ціна + закуп. ціна * 0,3 + 0,2 * (закуп. ціна + закуп. ціна * 0,3).
+            new_price = round(1.56*float(form.price.data),2)
+            cur.execute("SELECT PRODUCTS_NUMBER FROM STORE_PRODUCT WHERE UPC=?",(form.upc.data,))
+            number = cur.fetchall()[0][0]
+            cur.execute('''UPDATE STORE_PRODUCT
+                           SET SELLING_PRICE = ?, PRODUCTS_NUMBER = ?
+                           WHERE UPC=?''', (new_price, number+int(form.quantity.data), form.upc.data))
             con.commit()
             cur.close()
             session.pop('_flashes', None)
@@ -1307,11 +1384,6 @@ def return_contract():
     form = ReturnContractForm()
     con = sql.connect('dbs/zlagoda.db')
     cur = con.cursor()
-    cur.execute('''SELECT ID_PRODUCER, RPOD_NAME FROM PRODUCER''')
-    result = cur.fetchall()
-    groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
-    form.producer.choices = groups_list
-
     cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC
                    FROM EMPLOYEE
                    WHERE ROLE="manager"''')
@@ -1331,6 +1403,24 @@ def return_contract():
             con = sql.connect('dbs/zlagoda.db')
             con.row_factory = sql.Row
             cur = con.cursor()
+            cur.execute("SELECT PRODUCTS_NUMBER FROM STORE_PRODUCT WHERE UPC=?", (form.upc.data,))
+            number = cur.fetchall()[0][0]- int(form.quantity.data)
+            if number < 0:
+                flash('Result quantity of product after returning must be more than 0', 'danger')
+                return render_template('form.html', form=form, title='Add Return Contract')
+            cur.execute('''SELECT ID_PRODUCER, PURCHASE_PRICE FROM CONSIGNMENT
+            WHERE UPC IN (SELECT UPC
+            FROM STORE_PRODUCT
+            WHERE UPC=? OR UPC_PROM=?
+            ) AND SIGNATURE_DATE IN (SELECT MAX(SIGNATURE_DATE)
+            FROM CONSIGNMENT WHERE UPC IN (SELECT UPC
+            FROM STORE_PRODUCT
+            WHERE UPC=? OR UPC_PROM=?)
+            )''', (form.upc.data, form.upc.data, form.upc.data, form.upc.data))
+            result=cur.fetchall()
+            price = result[0][1]
+            prod=result[0][0]
+
             cur.execute("SELECT CONTRACT_NUMBER FROM RETURN_CONTRACT")
             result = cur.fetchall()
             num = random.randint(1, 10000)
@@ -1342,9 +1432,12 @@ def return_contract():
             eid = 'c' + str(num)
             cur.execute('''INSERT INTO RETURN_CONTRACT(CONTRACT_NUMBER, ID_PRODUCER, ID_EMPLOYEE, UPC, SIGNATURE_DATE, PRODUCT_NUMBER, SUM_TOTAL)
                                                VALUES (?, ?, ?, ?, ?, ?, ?);''', (
-                eid, form.producer.data, form.employee.data, form.upc.data, form.signature_date.data,
+                eid, prod, form.employee.data, form.upc.data, form.signature_date.data,
                 form.quantity.data,
-                form.sum.data))
+                price*int(form.quantity.data)))
+            cur.execute('''UPDATE STORE_PRODUCT
+                                                   SET PRODUCTS_NUMBER = ?
+                                                   WHERE UPC=?''', (number, form.upc.data))
             con.commit()
             cur.close()
             session.pop('_flashes', None)

@@ -348,6 +348,489 @@ def admin_data():
                            rowsCustomer_Card=rowsCustomer_Card)
 
 
+@blueprint.route('/queries/', methods=['get', 'post'])
+def queries():
+    tablename = 'Own Queries'
+    # Oleh
+    _1Query = 'У які дні тижня у період між датою _ та датою _ вдавалося продати товарів на найбільшу суму'
+    _2Query = 'Вивести клієнтів, які брали товари лише виробника _ у період з _ по _'
+    _3Query = 'На яку категорію користувач _ витрачає найбільше грошей'
+    _4Query = 'Сума всіх повернутих товарів по категоріях у період з _ по _'
+
+    # Taya
+    _5Query = 'Знайти клієнтів які купували лише акційні товари у період з _ по _'
+    _6Query = 'Вивести кількість проданих товарів у період з _ по _'
+    _7Query = 'Вивести робітників та суми на яку вони продали товарів з _ по _'
+    _8Query = 'Вивести усіх виробників, які постачають товари лише з  _  категорії'
+
+    # Andrii
+    _9Query = 'Знайти всіх працівників(менеджерів), які виписували хоча б одну накладну, яку підписував виробник _'
+    _10Query = 'Товарів якої категорії найбільша кількість у магазині'
+    _11Query = 'Товари якої категорії найменше повертаються'
+    _12Query = 'Знайти всіх працівників, які виписують тільки ті договори повернення, які підписує виробник _'
+
+    try:
+        
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+
+        # 2 Query
+        toExec = "SELECT ID_PRODUCER, RPOD_NAME FROM PRODUCER ORDER BY RPOD_NAME"
+        cur.execute(toExec)
+        names = [description[0] for description in cur.description]
+        tmp = cur.fetchall()
+        _2QueryRows = []
+        for i in range(0, len(tmp)):
+            _2QueryRows.append(tmp[i][names[1]])
+
+        # 3 Query
+        toExec = "SELECT CUST_SURNAME FROM CUSTOMER_CARD ORDER BY CUST_SURNAME"
+        cur.execute(toExec)
+        names = [description[0] for description in cur.description]
+        tmp = cur.fetchall()
+        _3QueryRows = []
+        for i in range(0, len(tmp)):
+            _3QueryRows.append(tmp[i][names[0]])
+
+        # 8 Query
+        toExec = "SELECT CATEGORY_NAME FROM CATEGORY ORDER BY CATEGORY_NAME"
+        cur.execute(toExec)
+        names = [description[0] for description in cur.description]
+        tmp = cur.fetchall()
+        _8QueryRows = []
+        for i in range(0, len(tmp)):
+            _8QueryRows.append(tmp[i][names[0]])
+
+        # 9 Query
+        toExec = "SELECT RPOD_NAME FROM PRODUCER ORDER BY RPOD_NAME"
+        cur.execute(toExec)
+        names = [description[0] for description in cur.description]
+        tmp = cur.fetchall()
+        _9QueryRows = []
+        for i in range(0, len(tmp)):
+            _9QueryRows.append(tmp[i][names[0]])
+
+        # 12 Query
+        toExec = "SELECT RPOD_NAME FROM PRODUCER ORDER BY RPOD_NAME"
+        cur.execute(toExec)
+        names = [description[0] for description in cur.description]
+        tmp = cur.fetchall()
+        _12QueryRows = []
+        for i in range(0, len(tmp)):
+            _12QueryRows.append(tmp[i][names[0]])
+
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+
+    return render_template('queries.html', tablename=tablename, _1Query=_1Query,
+                                                                _2Query=_2Query, _2QueryRows=_2QueryRows,
+                                                                _3Query=_3Query, _3QueryRows=_3QueryRows,
+                                                                _4Query=_4Query,
+                                                                _5Query=_5Query,
+                                                                _6Query=_6Query,
+                                                                _7Query=_7Query,
+                                                                _8Query=_8Query, _8QueryRows=_8QueryRows,
+                                                                _9Query=_9Query, _9QueryRows=_9QueryRows,
+                                                                _10Query=_10Query,
+                                                                _11Query=_11Query,
+                                                                _12Query=_12Query, _12QueryRows=_12QueryRows)
+
+
+@blueprint.route('/own_1Query', methods=['get', 'post'])
+def own_1Query():
+    date_from = request.form['1QueryName1']
+    date_to = request.form['1QueryName2']
+    tablename = 'У які дні тижня у період між датою _ та датою _ вдавалося продати товарів на найбільшу суму'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT SUM(WHOLE_TABLE.SUM_TOTAL) AS TOTAL_SPENT, strftime('%w', WHOLE_TABLE.PRINT_DATE) AS PRINT_DATE
+                        FROM (CUSTOMER_CARD CC 
+                        INNER JOIN CHEQUE CH ON CH.CARD_NUMBER = CC.CARD_NUMBER  
+                        INNER JOIN SALE S ON S.CHECK_NUMBER = CH.CHECK_NUMBER  
+                        INNER JOIN STORE_PRODUCT SP ON SP.UPC = S.UPC  
+                        INNER JOIN PRODUCT P ON SP.ID_PRODUCT = P.ID_PRODUCT 
+                        INNER JOIN CATEGORY CAT ON CAT.CATEGORY_NUMBER = P.CATEGORY_NUMBER) WHOLE_TABLE 
+                        WHERE CH.PRINT_DATE BETWEEN ? AND ?  
+                        GROUP BY strftime('%w', WHOLE_TABLE.PRINT_DATE) 
+                        ORDER BY TOTAL_SPENT DESC 
+                        LIMIT 1 ''', (date_from, date_to))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/own_2Query', methods=['get', 'post'])
+def own_2Query():
+    prod_name = request.form['2QuerySelect']
+    date_from = request.form['2QueryName1']
+    date_to = request.form['2QueryName2']
+    tablename = 'Вивести клієнтів, які брали товари лише виробника _ у період з _ по _'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT CUST_SURNAME, CUST_NAME, CUST_PATRONYMIC  
+                FROM CUSTOMER_CARD 
+                WHERE CARD_NUMBER NOT IN ( 
+                        SELECT CC.CARD_NUMBER 
+                        FROM (CUSTOMER_CARD CC 
+              INNER JOIN CHEQUE CH ON CH.CARD_NUMBER = CC.CARD_NUMBER  
+              INNER JOIN SALE S ON S.CHECK_NUMBER = CH.CHECK_NUMBER) SSS   
+                        WHERE (SSS.UPC IN(                             
+                                SELECT UPC  
+                                FROM CONSIGNMENT 
+                                WHERE ID_PRODUCER NOT IN ( 
+                                        SELECT ID_PRODUCER  
+                                        FROM PRODUCER 
+                                        WHERE RPOD_NAME = ? 
+                                        ) 
+                                ) AND PRINT_DATE BETWEEN ? AND ?) 
+                                OR UPC IN ( 
+                                SELECT UPC 
+                                FROM STORE_PRODUCT SP 
+                                WHERE NOT EXISTS ( 
+                                                    SELECT * 
+                                                    FROM CONSIGNMENT C 
+                                                    WHERE C.UPC = SP.UPC  
+                                                )                                     
+                                )     
+                                ) 
+                                AND CARD_NUMBER IN ( 
+                                SELECT CARD_NUMBER 
+                                FROM CHEQUE 
+                                WHERE PRINT_DATE BETWEEN ? AND ?      
+                        ) ''', (prod_name, date_from, date_to, date_from, date_to))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/own_3Query', methods=['get', 'post'])
+def own_3Query():
+    surname = request.form['3QuerySelect']
+    tablename = 'На яку категорію користувач _ витрачає найбільше грошей'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT SUM (CH.SUM_TOTAL) AS TOTAL_SPENT, CAT.CATEGORY_NAME 
+                        FROM CUSTOMER_CARD CC 
+                        INNER JOIN CHEQUE CH ON CH.CARD_NUMBER = CC.CARD_NUMBER  
+                        INNER JOIN SALE S ON S.CHECK_NUMBER = CH.CHECK_NUMBER  
+                        INNER JOIN STORE_PRODUCT SP ON SP.UPC = S.UPC  
+                        INNER JOIN PRODUCT P ON SP.ID_PRODUCT = P.ID_PRODUCT 
+                        INNER JOIN CATEGORY CAT ON CAT.CATEGORY_NUMBER = P.CATEGORY_NUMBER 
+                        WHERE CC.CARD_NUMBER IN ( 
+                                                SELECT CARD_NUMBER 
+                                                FROM CUSTOMER_CARD 
+                                                WHERE CUST_SURNAME = ? 
+                                                )    
+                        GROUP BY CAT.CATEGORY_NUMBER  
+                        ORDER BY TOTAL_SPENT DESC 
+                        LIMIT 1 ''', (surname,))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/own_4Query', methods=['get', 'post'])
+def own_4Query():
+    date_from = request.form['4QueryName1']
+    date_to = request.form['4QueryName2']
+    tablename = 'Сума всіх повернутих товарів по категоріях у період з _ по _'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT SUM(R.SUM_TOTAL) AS TOTAL_SUM, CAT.CATEGORY_NAME  
+                        FROM RETURN_CONTRACT R 
+                        INNER JOIN STORE_PRODUCT S ON S.UPC = R.UPC  
+                        INNER JOIN PRODUCT P ON S.ID_PRODUCT = P.ID_PRODUCT  
+                        INNER JOIN CATEGORY CAT ON CAT.CATEGORY_NUMBER = P.CATEGORY_NUMBER  
+                        WHERE SIGNATURE_DATE BETWEEN ? AND ?  
+                        GROUP BY CAT.CATEGORY_NUMBER ''', (date_from, date_to))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/own_5Query', methods=['get', 'post'])
+def own_5Query():
+    date_from = request.form['5QueryName1']
+    date_to = request.form['5QueryName2']
+    tablename = 'Знайти клієнтів які купували лише акційні товари у період з _ по _'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT CARD_NUMBER, CUST_SURNAME, CUST_NAME, CUST_PATRONYMIC 
+                    FROM CUSTOMER_CARD 
+                    WHERE CARD_NUMBER NOT IN ( 
+                         SELECT CARD_NUMBER 
+                         FROM CHEQUE 
+                         WHERE CHECK_NUMBER IN ( 
+                                  SELECT CHECK_NUMBER 
+                                  FROM SALE 
+                                  WHERE UPC IN ( 
+                                          SELECT UPC  
+                                          FROM STORE_PRODUCT 
+                                          WHERE PROMOTIONAL_PRODUCT=0)) 
+                                          AND PRINT_DATE BETWEEN ? AND ? 
+                                          
+                    ) AND CARD_NUMBER IN ( 
+                                            SELECT CARD_NUMBER 
+                                            FROM CHEQUE 
+                                            WHERE PRINT_DATE BETWEEN ? AND ? 
+                                        ) ''', (date_from, date_to, date_from, date_to))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/own_6Query', methods=['get', 'post'])
+def own_6Query():
+    date_from = request.form['6QueryName1']
+    date_to = request.form['6QueryName2']
+    tablename = 'Вивести кількість проданих товарів у період з _ по _'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT PRODUCT.ID_PRODUCT, PRODUCT.PRODUCT_NAME, COUNT(PRODUCT_NUMBER) AS QUANTITY 
+                        FROM  PRODUCT INNER JOIN STORE_PRODUCT  
+                        ON STORE_PRODUCT.ID_PRODUCT = PRODUCT.ID_PRODUCT 
+                        INNER JOIN SALE ON STORE_PRODUCT.UPC=SALE.UPC 
+                        INNER JOIN CHEQUE  
+                        ON CHEQUE.CHECK_NUMBER=SALE.CHECK_NUMBER 
+                        WHERE CHEQUE.PRINT_DATE BETWEEN ? AND ? 
+                        GROUP BY PRODUCT.ID_PRODUCT, PRODUCT.PRODUCT_NAME 
+                        ORDER BY QUANTITY DESC ''', (date_from, date_to))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/own_7Query', methods=['get', 'post'])
+def own_7Query():
+    date_from = request.form['7QueryName1']
+    date_to = request.form['7QueryName2']
+    tablename = 'Вивести робітників та суми на яку вони продали товарів з _ по _'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT EMPLOYEE.ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC, ROLE, 
+                        SUM(SUM_TOTAL) AS TOTAL_SUM   
+                        FROM EMPLOYEE INNER JOIN CHEQUE  
+                        ON EMPLOYEE.ID_EMPLOYEE = CHEQUE.ID_EMPLOYEE 
+                        WHERE CHEQUE.PRINT_DATE BETWEEN ? AND ? 
+                        GROUP BY EMPLOYEE.ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC   
+                         ORDER BY TOTAL_SUM DESC''', (date_from, date_to))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/own_8Query', methods=['get', 'post'])
+def own_8Query():
+    category_name = request.form['8QuerySelect']
+    tablename = 'Вивести усіх виробників, які постачають товари лише з  _  категорії'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT * 
+                        FROM PRODUCER 
+                        WHERE ID_PRODUCER NOT IN ( 
+                                SELECT ID_PRODUCER 
+                                FROM CONSIGNMENT  
+                                WHERE UPC IN ( 
+                                      SELECT UPC 
+                                      FROM STORE_PRODUCT 
+                                      WHERE ID_PRODUCT IN ( 
+                                             SELECT ID_PRODUCT 
+                                             FROM PRODUCT 
+                                            WHERE CATEGORY_NUMBER NOT IN( 
+                                                                        SELECT CATEGORY_NUMBER 
+                                                                        FROM CATEGORY 
+                                                                        WHERE CATEGORY_NAME=?)) 
+                                                            ) 
+                                              ) AND ID_PRODUCER IN ( 
+                                                            SELECT ID_PRODUCER 
+                                                            FROM CONSIGNMENT  
+                                              ) ''', (category_name,))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/own_9Query', methods=['get', 'post'])
+def own_9Query():
+    producer = request.form['9QuerySelect']
+    tablename = 'Знайти всіх працівників(менеджерів), які виписували хоча б одну накладну, яку підписував виробник _'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC 
+                        FROM EMPLOYEE E 
+                        WHERE E.ROLE = 'manager' 
+                        AND E.ID_EMPLOYEE in (SELECT ID_EMPLOYEE 
+                   		                        FROM CONSIGNMENT CT 
+			      	                            WHERE CT.ID_PRODUCER IN (SELECT ID_PRODUCER 
+                                                                       		FROM PRODUCER 
+                                                                       	    WHERE RPOD_NAME = ?
+            							                                ) 
+                                            ); 
+                        ''', (producer,))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/own_10Query', methods=['get'])
+def own_10Query():
+    tablename = 'Товарів якої категорії найбільша кількість у магазині'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT Res.CATEGORY_NUMBER, Res.CATEGORY_NAME 
+                  FROM ((CATEGORY C INNER JOIN PRODUCT P ON C.CATEGORY_NUMBER = P.CATEGORY_NUMBER) 
+                                    INNER JOIN STORE_PRODUCT SP ON P.ID_PRODUCT = SP.ID_PRODUCT) Res 
+                  GROUP BY Res.CATEGORY_NUMBER, Res.CATEGORY_NAME 
+                  ORDER BY SUM(Res.PRODUCTS_NUMBER) DESC 
+                  LIMIT 1;''')
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/own_11Query', methods=['get'])
+def own_11Query():
+    tablename = 'Товари якої категорії найменше повертаються'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT Res.CATEGORY_NUMBER, Res.CATEGORY_NAME 
+                  FROM (((CATEGORY C INNER JOIN PRODUCT P ON C.CATEGORY_NUMBER = P.CATEGORY_NUMBER) 
+                                     INNER JOIN STORE_PRODUCT SP ON P.ID_PRODUCT = SP.ID_PRODUCT) 
+                                     INNER JOIN RETURN_CONTRACT RC ON SP.UPC = RC.UPC) Res 
+                  GROUP BY Res.CATEGORY_NUMBER, Res.CATEGORY_NAME 
+                  ORDER BY SUM(Res.PRODUCT_NUMBER) 
+                  LIMIT 1; ''')
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
+@blueprint.route('/own_12Query', methods=['get', 'post'])
+def own_12Query():
+    producer = request.form['12QuerySelect']
+    tablename = 'Знайти всіх працівників, які виписують тільки ті договори повернення, які підписує виробник _'
+    try:
+        con = sql.connect('dbs/zlagoda.db')
+        con.row_factory = sql.Row
+        cur = con.cursor()
+        cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC 
+                  FROM EMPLOYEE E 
+                  WHERE E.ROLE = 'manager' 
+                        AND NOT EXISTS (SELECT CONTRACT_NUMBER 
+                                        FROM RETURN_CONTRACT RC1 
+                                        WHERE E.ID_EMPLOYEE = RC1.ID_EMPLOYEE 
+                                              AND CONTRACT_NUMBER NOT IN (SELECT CONTRACT_NUMBER 
+                                                                          FROM RETURN_CONTRACT RC2 
+                                                                          WHERE RC2.ID_PRODUCER IN (SELECT ID_PRODUCER 
+                                                                                                    FROM PRODUCER 
+                                                                                                    WHERE RPOD_NAME = ? 
+                                                                                                    ) 
+                                                                          ) 
+                                        ); ''', (producer,))
+        names = [description[0] for description in cur.description]
+        rows = cur.fetchall()
+        cur.close()
+    except sql.Error as error:
+        print("Error while connecting to sqlite", error)
+    finally:
+        if (con):
+            con.close()
+    return render_template("list.html", rows=rows, tablename=tablename, titles=names)
+
+
 @blueprint.route('/producer/', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator
 def producer():

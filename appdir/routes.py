@@ -1,6 +1,7 @@
 import datetime
 import random
 import sqlite3 as sql
+from collections import namedtuple
 
 from dateutil.relativedelta import relativedelta
 from flask import Blueprint, render_template, request, redirect, url_for
@@ -983,7 +984,7 @@ def update_sale(rowid):
     return render_template('form.html', form=form, title='Update Store-Product')
 
 @blueprint.route('/<int:rowid>/update-customer', methods=['get', 'post'])
-@roles_required('Cashier')  # Use of @roles_required decorator
+@roles_required(['Cashier', 'Manager'])  # Use of @roles_required decorator
 def update_customer(rowid):
     con = sql.connect('dbs/zlagoda.db')
     cur = con.cursor()
@@ -1116,7 +1117,7 @@ def check_form():
 
 
 @blueprint.route('/cashier_queries/', methods=['get'])
-@roles_required('Cashier')
+@roles_required(['Cashier', 'Manager'])
 def cashier_queries():
     tablename = 'Cashier Queries'
     _1Query = 'Скласти список чеків,  видрукуваних даним касиром за певний період часу'
@@ -1220,7 +1221,7 @@ def cashier_queries():
 
 
 @blueprint.route('/1QueryC', methods=['get', 'post'])
-@roles_required('Cashier')
+@roles_required(['Cashier', 'Manager'])
 def cashier_1Query():
     cashier_id = request.form['1QueryCSelect']
     date_from = request.form['1QueryCName1']
@@ -1245,7 +1246,7 @@ def cashier_1Query():
 
 
 @blueprint.route('/2QueryC', methods=['get', 'post'])
-@roles_required('Cashier')
+@roles_required(['Cashier', 'Manager'])
 def cashier_2Query():
     check_number = request.form['2QueryCSelect']
     tablename = 'За номером чеку вивести усю інформацію про даний чек'
@@ -1271,7 +1272,7 @@ def cashier_2Query():
 
 
 @blueprint.route('/3QueryC', methods=['get', 'post'])
-@roles_required('Cashier')
+@roles_required(['Cashier', 'Manager'])
 def cashier_3Query():
     surname = request.form['3QueryCSelect']
     tablename = 'Вивести усю інформацію про покупця з певним прізвищем, що має карту клієнта'
@@ -1294,7 +1295,7 @@ def cashier_3Query():
 
 
 @blueprint.route('/4QueryC', methods=['get', 'post'])
-@roles_required('Cashier')
+@roles_required(['Cashier', 'Manager'])
 def cashier_4Query():
     percent = request.form['4QueryCName']
     tablename = 'Список усіх постійних клієнтів, що мають карту клієнта з певним відсотком'
@@ -1315,7 +1316,7 @@ def cashier_4Query():
 
 
 @blueprint.route('/5QueryC', methods=['get', 'post'])
-@roles_required('Cashier')
+@roles_required(['Cashier', 'Manager'])
 def cashier_5Query():
     category_name = request.form['5QueryCSelect']
     tablename = 'Скласти список товарів, що належать певній категорії, відсортованих за назвою'
@@ -1337,7 +1338,7 @@ def cashier_5Query():
 
 
 @blueprint.route('/6QueryC', methods=['get'])
-@roles_required('Cashier')
+@roles_required(['Cashier', 'Manager'])
 def cashier_6Query():
     tablename = 'Скласти список усіх товарів, відсортований за назвою'
     try:
@@ -1359,7 +1360,7 @@ def cashier_6Query():
 
 
 @blueprint.route('/7QueryC', methods=['get', 'post'])
-@roles_required('Cashier')
+@roles_required(['Cashier', 'Manager'])
 def cashier_7Query():
     if request.form['7QueryCSelect1'] == 'Кількість одиниць':
         order_by = 'PRODUCTS_NUMBER'
@@ -1387,7 +1388,7 @@ def cashier_7Query():
 
 
 @blueprint.route('/8QueryC', methods=['get', 'post'])
-@roles_required('Cashier')
+@roles_required(['Cashier', 'Manager'])
 def cashier_8Query():
     if request.form['8QueryCSelect1'] == 'Кількість одиниць':
         order_by = 'PRODUCTS_NUMBER'
@@ -1415,7 +1416,7 @@ def cashier_8Query():
 
 
 @blueprint.route('/9QueryC', methods=['get', 'post'])
-@roles_required('Cashier')
+@roles_required(['Cashier', 'Manager'])
 def cashier_9Query():
     check_num = request.form['9QueryCSelect']
     tablename = 'За номером чека скласти список усіх товарів, інформація про продаж яких є у цьому чеку'
@@ -1440,7 +1441,7 @@ def cashier_9Query():
 
 
 @blueprint.route('/10QueryC', methods=['get', 'post'])
-@roles_required('Cashier')
+@roles_required(['Cashier', 'Manager'])
 def cashier_10Query():
     upc = request.form['10QueryCSelect']
     tablename = 'За UPC-товару знайти ціну продажу товару, кількість наявних одиниць товару, назву та характеристики товару'
@@ -1463,7 +1464,7 @@ def cashier_10Query():
 
 
 @blueprint.route('/11QueryC', methods=['get', 'post'])
-@roles_required('Cashier')
+@roles_required(['Cashier', 'Manager'])
 def cashier_11Query():
     id = request.form['11QueryCSelect']
     tablename = 'За ID_працівника знайти всю інформацію про себе'

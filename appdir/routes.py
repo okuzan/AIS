@@ -243,7 +243,7 @@ def update_employee(rowid):
 
 
 @blueprint.route('/admin_allData', methods=['get'])
-@roles_required('Manager')
+@roles_required(['Manager',])
 def admin_data():
     try:
         con = sql.connect('dbs/zlagoda.db')

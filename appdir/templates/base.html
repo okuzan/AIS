@@ -17,7 +17,15 @@
             <ul class="nav navbar-nav">
                 <li class="active"><a href{{ url_for("blueprint.home_page") }}>Home</a></li>
                 <li><a href={{ url_for("blueprint.admin_data") }}>Data</a></li>
-                <li><a href={{ url_for("blueprint.home_page") }}>Queries</a></li>
+                {% if current_user.is_authenticated %}
+                    {% if current_user.has_roles('Manager') %}
+                        <li><a href="/admin_queries/">Queries</a></li>
+                    {% elif current_user.has_roles('Cashier') %}
+                        <li><a href="/cashier_queries/">Queries</a></li>
+                    {% else %}
+                        <li><a href="/">Queries</a></li>
+                    {% endif %}
+                {% endif %}
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 {% if current_user.is_authenticated %}
@@ -32,18 +40,19 @@
                         </li>
                     {% endif %}
                 {% else %}
-                    <li><a href={{ url_for('blueprint.login_page') }}><span class="glyphicon glyphicon-log-in"></span></a>
+                    <li><a href={{ url_for('blueprint.login_page') }}><span
+                            class="glyphicon glyphicon-log-in"></span></a>
                     </li>
                 {% endif %}
             </ul>
         </div>
     </nav>
     <div>
-      {% for category, message in get_flashed_messages(with_categories=True) %}
-      <div class="alert alert-{{ category }}" role="alert" hidden="true">
-          {{ message}}
-</div>
-{% endfor %}
+        {% for category, message in get_flashed_messages(with_categories=True) %}
+            <div class="alert alert-{{ category }}" role="alert" hidden="true">
+                {{ message }}
+            </div>
+        {% endfor %}
     </div>
 {% endblock %}
 

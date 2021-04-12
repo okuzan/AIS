@@ -7,6 +7,14 @@
         display: block;
     }
 
+    .btn-info {
+        text-align: right;
+    }
+
+    button {
+        display: inline-block;
+    }
+
     #button {
         text-align: center;
     }
@@ -42,10 +50,11 @@
             </tr>
         {% endfor %}
     </table>
+    <br><br>
+    <h2 class="text-center m-3">{{ tablenameCustomer_Card }}</h2>
+    {#    <a class="title"#}
+    {#       href={{ url_for('blueprint.table',table=tablenameCustomer_Card) }}>{{ tablenameCustomer_Card }} </a>#}
 
-        <h2 class="text-center m-3">{{ tablenameCustomer_Card }}</h2>
-{#    <a class="title"#}
-{#       href={{ url_for('blueprint.table',table=tablenameCustomer_Card) }}>{{ tablenameCustomer_Card }} </a>#}
     <br>
     <table class="table table-striped">
         <thead>

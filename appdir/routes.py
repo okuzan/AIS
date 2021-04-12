@@ -943,7 +943,7 @@ def update_customer(rowid):
 
 
 @blueprint.route('/check', methods=['get', 'post'])
-@roles_required('Manager')  # Use of @roles_required decorator
+@roles_required('Cashier')  # Use of @roles_required decorator
 def check_form():
     form = CheckForm()
     con = sql.connect('dbs/zlagoda.db')

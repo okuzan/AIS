@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block content %}
+    <div class="container">
+        <h3>{{ title }}</h3>
+        <hr>
+        {{ form.hidden_tag() }}
+        {{ wtf.form_field(form.employee) }}
+        {{ wtf.form_field(form.card) }}
+        <h4>Sales</h4>
+        <hr>
+        {% for sale in form.sales %}
+            <h5>Sale</h5>
+            {{ wtf.form_field(sale.upc_code) }}
+            {{ wtf.form_field(sale.check_number) }}
+            {{ wtf.form_field(sale.quantity) }}
+
+        {% endfor %}
+        {{ wtf.form_field(form.submit) }}
+    </div>
+{% endblock %}
+{#{% block content %}#}
+{#    <div class="container">#}
+{#        <h3>{{ title }}</h3>#}
+{#        <hr>#}
+{#        {{ wtf.quick_form(form) }}#}
+{#        <hr>#}
+{#    </div>#}
+{#    <body>#}
+{#    <form method="POST" action="">#}
+{#        {{ form.hidden_tag() }}#}
+{#        {{ form.employee.label }} {{ form.employee }}#}
+{#        {{ form.card.label }} {{ form.card }}#}
+{#        <br/>#}
+{#        {% for nested in form.sales %}#}
+{#            {{ nested.label }}{{ nested }}#}
+{#        {% endfor %}#}
+{#        <button>Submit</button>#}
+{#    </form>#}
+{#    </body>#}
+{#{% endblock %}#}

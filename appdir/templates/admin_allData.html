@@ -192,7 +192,7 @@
                 {% endfor %}
                 <td>
                     <form method=get
-                          action="{{ url_for('blueprint.update_sale',
+                          action="{{ url_for('blueprint.update_customer',
                       rowid=loop.index,
                                             key=namesSale[0],
 
@@ -215,7 +215,7 @@
     </table>
 
     <br>
-    <form action="/check">
+    <form action="/">
         <button style="float: right; position: absolute" type="submit" class="btn btn-success center">ADD</button>
     </form>
     <h2 class="text-center m-3">{{ tablenameCheque }}</h2>
@@ -235,8 +235,7 @@
                     <form method=get
                           action="{{ url_for('blueprint.update_cheque',
                       rowid=loop.index,
-                                            key= namesCheque[0],
-
+                      key= namesCheque[0],
                       table=tablenameCheque) }}">
                         <button>UPD</button>
                     </form>

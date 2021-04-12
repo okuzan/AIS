@@ -4,6 +4,8 @@
     <p><a href={{ url_for('blueprint.login_page') }}>{%trans%}Sign in{%endtrans%}</a></p>
     <p><a href={{ url_for('blueprint.home_page') }}>{%trans%}Home Page{%endtrans%}</a> (accessible to anyone)</p>
     <p><a href={{ url_for('blueprint.member_page') }}>{%trans%}Member Page{%endtrans%}</a> (login_required: member@example.com / Password1)</p>
+    <p><a href={{ url_for('blueprint.update_customer') }}>{%trans%}Customers' Cards{%endtrans%}</a> (login_required: member@example.com / Password1)</p>
+    <p><a href={{ url_for('blueprint.update_check') }}>{%trans%}Cashier Queries{%endtrans%}</a></p>
     <p><a href={{ url_for('blueprint.cashier_queries') }}>{%trans%}Cashier Queries{%endtrans%}</a></p>
     <p><a href={{ url_for('user.logout') }}>{%trans%}Sign out{%endtrans%}</a></p>
 {% endblock %}

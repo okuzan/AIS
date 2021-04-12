@@ -1,0 +1,94 @@
+<style type="text/css">
+    .center {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-left: 10px;
+        margin-bottom: 10px;
+        border: 2px solid green;
+    }
+
+    body {
+        color: #536482;
+        background-color: white;
+        zoom: 90%;
+    }
+
+    .title {
+        margin-top: 15px;
+        text-align: center;
+        font-size: 32px;
+        color: #000000;
+        display: block;
+    }
+
+
+</style>
+{% extends "base.html" %}
+{% block content %}
+    <br>
+    {#    <h2 class="text-center m-3">{{ tablenameCheque }}</h2>#}
+    <a class="title"
+       href={{ url_for('blueprint.table',table=tablenameCheque) }}>{{ tablenameCheque }} </a>
+
+    <table class="table table-striped">
+        <thead>
+        {% for nameCheque in namesCheque %}
+            <td><strong>{{ nameCheque }}</strong></td>
+        {% endfor %}
+        </thead>
+
+        {% for rowCheque in rowsCheque %}
+            <tr>
+                {% for nameCheque in namesCheque %}
+                    <td>{{ rowCheque[nameCheque] }}</td>
+                {% endfor %}
+                <td>
+                    <form method=get
+                          action="{{ url_for('blueprint.update_cheque',
+                      rowid=loop.index,
+                      key= namesCheque[0],
+                      table=tablenameCheque) }}">
+                        <button>UPD</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    {#    <h2 class="text-center m-3">{{ tablenameCustomer_Card }}</h2>#}
+    <a class="title"
+       href={{ url_for('blueprint.table',table=tablenameCustomer_Card) }}>{{ tablenameCustomer_Card }} </a>
+
+    <table class="table table-striped">
+        <thead>
+        {% for nameCustomer_Card in namesCustomer_Card %}
+            <td><strong>{{ nameCustomer_Card }}</strong></td>
+        {% endfor %}
+        </thead>
+
+        {% for rowCustomer_Card in rowsCustomer_Card %}
+            <tr>
+                {% for nameCustomer_Card in namesCustomer_Card %}
+                    <td>{{ rowCustomer_Card[nameCustomer_Card] }}</td>
+                {% endfor %}
+                <td>
+                    <form method=get
+                          action="{{ url_for('blueprint.update_customer',
+                      rowid=loop.index,
+                      key= namesCustomer_Card[0],
+                      table=tablenameCustomer_Card) }}">
+                        <button>UPD</button>
+                    </form>
+                </td>
+            </tr>
+
+        {% endfor %}
+    </table>
+
+    <br>
+    <br>
+    {#    onclick="window.print();return false;" />#}
+    <button type="button" class="btn btn-info" onclick="window.print()">Print</button>
+
+{% endblock %}

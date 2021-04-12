@@ -1,0 +1,56 @@
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+
+        #section-to-print, #section-to-print * {
+            visibility: visible;
+        }
+    }
+</style>
+
+{% extends "base.html" %}
+{% block content %}
+    <div id="section-to-print">
+        <h2 class="text-center">{{ title }}</h2>
+        <br>
+        <br>
+        <table class="table table-striped">
+            <thead>
+            {% for name in names %}
+                <td><strong> {{ name }}</strong></td>
+            {% endfor %}
+            </thead>
+
+            {% for row in rows %}
+                <tr>
+                    {% for name in names %}
+                        <td>{{ row[name] }}</td>
+                    {% endfor %}
+                    <td>
+                        <form method=get
+                              action="{{ url_for('blueprint.update_customer',
+                      rowid=loop.index,
+                      key=names[0],
+                      table=tablename) }}">
+                            <button>UPD</button>
+                        </form>
+                    </td>
+
+                    <td>
+                        <form method=post
+                              action="{{ url_for('blueprint.delete',
+                      rowid=loop.index0,
+                      key=names[0],
+                      table=tablename) }}">
+                            <button type="submit" class="btn btn-danger">DEL</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <button type="button" class="btn btn-info" onclick="window.print()">Print</button>
+
+{% endblock %}

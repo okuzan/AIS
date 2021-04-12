@@ -242,8 +242,33 @@ def update_employee(rowid):
     return render_template('form.html', form=form, title='Update Employee')
 
 
+@blueprint.route('/cashier/data', methods=['get'])
+@roles_required(['Cashier', 'Manager'])
+def cashier_data():
+    con = sql.connect('dbs/zlagoda.db')
+    con.row_factory = sql.Row
+    cur = con.cursor()
+
+    # Data for Cheque
+    cur.execute("select * from cheque")
+    namesCheque = [description[0] for description in cur.description]
+    rowsCheque = cur.fetchall()
+
+    # Data for Customer_Card
+    cur.execute("select * from customer_card")
+    namesCustomer_Card = [description[0] for description in cur.description]
+    rowsCustomer_Card = cur.fetchall()
+    cur.close()
+    con.close()
+
+    return render_template('cashier_data.html', title='All Data',
+                           tablenameCheque='Cheque', namesCheque=namesCheque, rowsCheque=rowsCheque,
+                           tablenameCustomer_Card='Customer Card', namesCustomer_Card=namesCustomer_Card,
+                           rowsCustomer_Card=rowsCustomer_Card)
+
+
 @blueprint.route('/admin_allData', methods=['get'])
-@roles_required(['Manager',])
+@roles_required('Manager')
 def admin_data():
     try:
         con = sql.connect('dbs/zlagoda.db')
@@ -409,6 +434,23 @@ def employee():
     return render_template('form.html', form=form, title='Add Employee')
 
 
+@blueprint.route('/table/<table>/')
+@roles_required('Manager')  # Use of @roles_required decorator
+def table(table):
+    tablename = table if ' ' not in table else table.replace(' ', '_')
+    con = sql.connect('dbs/zlagoda.db')
+    con.row_factory = sql.Row
+    cur = con.cursor()
+    str_req = "select * from " + str(tablename)
+    cur.execute(str_req)
+    names = [description[0] for description in cur.description]
+    rows = cur.fetchall()
+    cur.close()
+    con.close()
+    tableUp = table.upper()
+    return render_template('table.html', tablename=tablename, names=names, rows=rows, title=tableUp)
+
+
 @blueprint.route('/<int:rowid>/update-producer', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator
 def update_producer(rowid):
@@ -533,7 +575,7 @@ def update_contract(rowid):
     cur.execute("SELECT * FROM RETURN_CONTRACT LIMIT 1 OFFSET " + (str(rowid - 1))),
     row = cur.fetchall()[0]
     form = ReturnContractForm()
-    form.upc.data =row[0]
+    form.upc.data = row[0]
     form.employee.data = row[2]
     form.quantity.data = str(row[5])
     form.signature_date.data = datetime.strptime(str(row[4]), '%Y-%m-%d')
@@ -860,15 +902,15 @@ def update_store_product(rowid):
     ''')
     result = cur.fetchall()
     groups_list = [(i[0], "(" + i[0] + ") ") for i in result]
-    form.upc_prom.choices = [('-1','---')]+groups_list
+    form.upc_prom.choices = [('-1', '---')] + groups_list
 
     # form.category_number = row[1]
     print(row)
     form.upc_code.data = row[0]
     form.quantity.data = str(row[4])
-    form.product_number.data=row[2]
-    if str(row[1])!='None':
-        form.upc_prom.data=row[1]
+    form.product_number.data = row[2]
+    if str(row[1]) != 'None':
+        form.upc_prom.data = row[1]
     form.promotional.data = str(row[5])
 
     if form.is_submitted():
@@ -896,7 +938,6 @@ def update_store_product(rowid):
                     request.form['promotional'],
                     str(rowid - 1)))
 
-
             con.commit()
             cur.close()
             flash('Store-Product was successfully updated', 'success')
@@ -908,6 +949,7 @@ def update_store_product(rowid):
             if (con):
                 con.close()
     return render_template('form.html', form=form, title='Update Store-Product')
+
 
 @blueprint.route('/<int:rowid>/update-sale', methods=['get', 'post'])
 @roles_required('Manager')  # Use of @roles_required decorator
@@ -936,7 +978,7 @@ def update_sale(rowid):
     ''')
     result = cur.fetchall()
     groups_list = [(i[0], "(" + i[0] + ") ") for i in result]
-    form.upc_prom.choices = [('-1','---')]+groups_list
+    form.upc_prom.choices = [('-1', '---')] + groups_list
 
     # form.category_number = row[1]
     form.upc_code.data = row[0]
@@ -970,7 +1012,6 @@ def update_sale(rowid):
                     request.form['promotional'],
                     str(rowid - 1)))
 
-
             con.commit()
             cur.close()
             flash('Store-Product was successfully updated', 'success')
@@ -982,6 +1023,7 @@ def update_sale(rowid):
             if (con):
                 con.close()
     return render_template('form.html', form=form, title='Update Store-Product')
+
 
 @blueprint.route('/<int:rowid>/update-customer', methods=['get', 'post'])
 @roles_required(['Cashier', 'Manager'])  # Use of @roles_required decorator
@@ -1040,7 +1082,7 @@ def check_form():
                           FROM CUSTOMER_CARD''')
     result = cur.fetchall()
     groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
-    form.card.choices = [("", "---")]+groups_list
+    form.card.choices = [("", "---")] + groups_list
     if form.validate_on_submit():
         try:
             con = sql.connect('dbs/zlagoda.db')
@@ -1054,39 +1096,40 @@ def check_form():
                 temp.append(row[0])
             while temp.__contains__('c' + str(num)):
                 num = random.randint(1, 10000)
-            max_id = 'c'+str(num)
+            max_id = 'c' + str(num)
             sale_prices = []
             date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             sum_total = 0
             percent = 0
-            if form.card.data.__len__()>0:
+            if form.card.data.__len__() > 0:
                 cur.execute('''SELECT PERCENT 
                              FROM CUSTOMER_CARD
                              WHERE CARD_NUMBER=?''', (form.card.data,))
                 result = cur.fetchall()
-                percent=result[0][0]
+                percent = result[0][0]
             for s in form.sales.data:
                 cur.execute('''SELECT SELLING_PRICE, PRODUCTS_NUMBER
                                FROM STORE_PRODUCT
                                WHERE UPC=?''', (s['upc_code'],))
                 result = cur.fetchall()
-                if result.__len__()!=1:
+                if result.__len__() != 1:
                     flash('Incorrect UPC', 'danger')
                     return render_template('checkForm.html', form=form, title='Add check')
-                if result[0][1]<int(s['quantity']):
+                if result[0][1] < int(s['quantity']):
                     flash('Incorrect Quantity', 'danger')
                     return render_template('checkForm.html', form=form, title='Add check')
-                sale_prices=sale_prices+[(result[0][0], s['quantity'], s['upc_code'], result[0][1])]
+                sale_prices = sale_prices + [(result[0][0], s['quantity'], s['upc_code'], result[0][1])]
             for sale in sale_prices:
-                sum_total+=int(sale[1])*int(sale[0])
+                sum_total += int(sale[1]) * int(sale[0])
             if percent != 0:
-                sum_total=0.01*(100-percent)*sum_total
-            sum_total=round(sum_total, 2)
-            vat = round(0.2 * sum_total / 1.2,2)
-            if form.card.data.__len__()>0:
+                sum_total = 0.01 * (100 - percent) * sum_total
+            sum_total = round(sum_total, 2)
+            vat = round(0.2 * sum_total / 1.2, 2)
+            if form.card.data.__len__() > 0:
                 cur.execute('''INSERT INTO CHEQUE(CHECK_NUMBER, ID_EMPLOYEE, CARD_NUMBER, PRINT_DATE, SUM_TOTAL, VAT)
-                                                              VALUES (?, ?, ?, ?, ?, ?);''', (max_id, form.employee.data,
-                                                                                              form.card.data, date, sum_total, vat))
+                                                              VALUES (?, ?, ?, ?, ?, ?);''',
+                            (max_id, form.employee.data,
+                             form.card.data, date, sum_total, vat))
             else:
                 cur.execute('''INSERT INTO CHEQUE(CHECK_NUMBER, ID_EMPLOYEE, CARD_NUMBER, PRINT_DATE, SUM_TOTAL, VAT)
                                                                               VALUES (?, ?, NULL, ?, ?, ?);''',
@@ -1097,10 +1140,10 @@ def check_form():
                 cur.execute('''INSERT INTO SALE(UPC, CHECK_NUMBER, PRODUCT_NUMBER, SELLING_PRICE)
                                                                                               VALUES (?, ?, ?, ?);''',
                             (sale[2], max_id,
-                            sale[1], sale[0]))
+                             sale[1], sale[0]))
                 cur.execute('''UPDATE STORE_PRODUCT
                                           SET PRODUCTS_NUMBER = ?
-                                          WHERE UPC=?''', (int(sale[3])-int(sale[1]), sale[2]))
+                                          WHERE UPC=?''', (int(sale[3]) - int(sale[1]), sale[2]))
             con.commit()
             cur.close()
             session.pop('_flashes', None)
@@ -1232,8 +1275,9 @@ def cashier_1Query():
         con.row_factory = sql.Row
         cur = con.cursor()
         cur.execute(
-            "SELECT * FROM CHEQUE WHERE PRINT_DATE BETWEEN '{}' AND '{}' AND ID_EMPLOYEE='{}'".format(date_from, date_to,
-                                                                                                cashier_id))
+            "SELECT * FROM CHEQUE WHERE PRINT_DATE BETWEEN '{}' AND '{}' AND ID_EMPLOYEE='{}'".format(date_from,
+                                                                                                      date_to,
+                                                                                                      cashier_id))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -1501,7 +1545,7 @@ def store_product():
     ''')
     result = cur.fetchall()
     groups_list = [(i[0], "(" + str(i[0]) + ") " + i[1]) for i in result]
-    form.product_number.choices =groups_list
+    form.product_number.choices = groups_list
 
     cur.execute('''SELECT UPC
                    FROM STORE_PRODUCT S
@@ -1513,7 +1557,7 @@ def store_product():
     ''')
     result = cur.fetchall()
     groups_list = [(i[0], "(" + str(i[0]) + ") ") for i in result]
-    form.upc_prom.choices = [('', '---')]+ groups_list
+    form.upc_prom.choices = [('', '---')] + groups_list
 
     if form.validate_on_submit():
         try:
@@ -1521,12 +1565,12 @@ def store_product():
             con.row_factory = sql.Row
             cur = con.cursor()
             if form.upc_prom.data.__len__() < 12:
-                if form.quantity.data !='0':
+                if form.quantity.data != '0':
                     flash('You can set only 0 quantity for new no promotional product', 'danger')
                     return render_template('form.html', form=form, title='Add Store Product')
                 cur.execute('''INSERT INTO STORE_PRODUCT(UPC, ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PROMOTIONAL_PRODUCT)
                                                   VALUES (?, ?,?, ?, ?);''', (
-                    form.upc_code.data, form.product_number.data,0,
+                    form.upc_code.data, form.product_number.data, 0,
                     0, form.promotional.data))
             else:
                 if form.promotional.data == '1':
@@ -1539,10 +1583,10 @@ def store_product():
                             WHERE PROMOTIONAL='0' AND ID_PRODUCT=?
                 )''', (form.product_number.data,))
                 result = cur.fetchall()
-                if result.__len__()<1:
+                if result.__len__() < 1:
                     flash('You can`t create promotional product without store product', 'danger')
                     return render_template('form.html', form=form, title='Add Store Product')
-                price = round(1.34*float(result[0][0]),2)
+                price = round(1.34 * float(result[0][0]), 2)
                 cur.execute('''INSERT INTO STORE_PRODUCT(UPC, UPC_PROM, ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PROMOTIONAL_PRODUCT)
                                    VALUES (?, ?, ?, ?, ?, ?);''', (
                     form.upc_code.data, form.upc_prom.data, form.product_number.data, price,
@@ -1607,13 +1651,13 @@ def consignment():
                 eid, form.producer.data, form.employee.data, form.upc.data, form.signature_date.data,
                 form.quantity.data,
                 form.price.data))
-            #закуп. ціна + закуп. ціна * 0,3 + 0,2 * (закуп. ціна + закуп. ціна * 0,3).
-            new_price = round(1.56*float(form.price.data),2)
-            cur.execute("SELECT PRODUCTS_NUMBER FROM STORE_PRODUCT WHERE UPC=?",(form.upc.data,))
+            # закуп. ціна + закуп. ціна * 0,3 + 0,2 * (закуп. ціна + закуп. ціна * 0,3).
+            new_price = round(1.56 * float(form.price.data), 2)
+            cur.execute("SELECT PRODUCTS_NUMBER FROM STORE_PRODUCT WHERE UPC=?", (form.upc.data,))
             number = cur.fetchall()[0][0]
             cur.execute('''UPDATE STORE_PRODUCT
                            SET SELLING_PRICE = ?, PRODUCTS_NUMBER = ?
-                           WHERE UPC=?''', (new_price, number+int(form.quantity.data), form.upc.data))
+                           WHERE UPC=?''', (new_price, number + int(form.quantity.data), form.upc.data))
             con.commit()
             cur.close()
             session.pop('_flashes', None)
@@ -1655,7 +1699,7 @@ def return_contract():
             con.row_factory = sql.Row
             cur = con.cursor()
             cur.execute("SELECT PRODUCTS_NUMBER FROM STORE_PRODUCT WHERE UPC=?", (form.upc.data,))
-            number = cur.fetchall()[0][0]- int(form.quantity.data)
+            number = cur.fetchall()[0][0] - int(form.quantity.data)
             if number < 0:
                 flash('Result quantity of product after returning must be more than 0', 'danger')
                 return render_template('form.html', form=form, title='Add Return Contract')
@@ -1668,9 +1712,9 @@ def return_contract():
             FROM STORE_PRODUCT
             WHERE UPC=? OR UPC_PROM=?)
             )''', (form.upc.data, form.upc.data, form.upc.data, form.upc.data))
-            result=cur.fetchall()
+            result = cur.fetchall()
             price = result[0][1]
-            prod=result[0][0]
+            prod = result[0][0]
 
             cur.execute("SELECT CONTRACT_NUMBER FROM RETURN_CONTRACT")
             result = cur.fetchall()
@@ -1685,7 +1729,7 @@ def return_contract():
                                                VALUES (?, ?, ?, ?, ?, ?, ?);''', (
                 eid, prod, form.employee.data, form.upc.data, form.signature_date.data,
                 form.quantity.data,
-                price*int(form.quantity.data)))
+                price * int(form.quantity.data)))
             cur.execute('''UPDATE STORE_PRODUCT
                                                    SET PRODUCTS_NUMBER = ?
                                                    WHERE UPC=?''', (number, form.upc.data))
@@ -2201,7 +2245,8 @@ def admin_13Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        toExec = "SELECT * FROM CONSIGNMENT WHERE UPC IN (SELECT UPC FROM STORE_PRODUCT WHERE ID_PRODUCT='{}') AND SIGNATURE_DATE BETWEEN '{}' AND '{}'".format(product_id, date_from, date_to)
+        toExec = "SELECT * FROM CONSIGNMENT WHERE UPC IN (SELECT UPC FROM STORE_PRODUCT WHERE ID_PRODUCT='{}') AND SIGNATURE_DATE BETWEEN '{}' AND '{}'".format(
+            product_id, date_from, date_to)
         print(toExec)
         cur.execute(toExec)
         names = [description[0] for description in cur.description]
@@ -2226,7 +2271,8 @@ def admin_14Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT * FROM CONSIGNMENT WHERE ID_PRODUCER='{}' AND SIGNATURE_DATE BETWEEN '{}' AND '{}' ".format(producer_id, date_from, date_to))
+        cur.execute("SELECT * FROM CONSIGNMENT WHERE ID_PRODUCER='{}' AND SIGNATURE_DATE BETWEEN '{}' AND '{}' ".format(
+            producer_id, date_from, date_to))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -2322,9 +2368,10 @@ def admin_18Query():
         con.row_factory = sql.Row
         cur = con.cursor()
         cur.execute(
-            "SELECT * FROM RETURN_CONTRACT WHERE SIGNATURE_DATE BETWEEN '{}' AND '{}' AND ID_PRODUCER='{}'".format(date_from,
-                                                                                                             date_to,
-                                                                                                             producer_id))
+            "SELECT * FROM RETURN_CONTRACT WHERE SIGNATURE_DATE BETWEEN '{}' AND '{}' AND ID_PRODUCER='{}'".format(
+                date_from,
+                date_to,
+                producer_id))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -2346,7 +2393,8 @@ def admin_19Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT * FROM RETURN_CONTRACT WHERE SIGNATURE_DATE BETWEEN '{}' AND '{}'".format(date_from, date_to))
+        cur.execute(
+            "SELECT * FROM RETURN_CONTRACT WHERE SIGNATURE_DATE BETWEEN '{}' AND '{}'".format(date_from, date_to))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()
@@ -2508,7 +2556,9 @@ def admin_26Query():
         con = sql.connect('dbs/zlagoda.db')
         con.row_factory = sql.Row
         cur = con.cursor()
-        cur.execute("SELECT STORE_PRODUCT.UPC, STORE_PRODUCT.ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PRODUCT_NAME, CHARACTERISTICS FROM STORE_PRODUCT INNER JOIN PRODUCT ON PRODUCT.ID_PRODUCT=STORE_PRODUCT.ID_PRODUCT WHERE UPC=?",(upc,))
+        cur.execute(
+            "SELECT STORE_PRODUCT.UPC, STORE_PRODUCT.ID_PRODUCT, SELLING_PRICE, PRODUCTS_NUMBER, PRODUCT_NAME, CHARACTERISTICS FROM STORE_PRODUCT INNER JOIN PRODUCT ON PRODUCT.ID_PRODUCT=STORE_PRODUCT.ID_PRODUCT WHERE UPC=?",
+            (upc,))
         names = [description[0] for description in cur.description]
         rows = cur.fetchall()
         cur.close()

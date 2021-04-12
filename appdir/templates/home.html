@@ -8,6 +8,7 @@
         {% endfor %}
         <h2>{% trans %}Home page{% endtrans %}</h2>
         <p><a href={{ url_for('blueprint.login_page') }}>{% trans %}Sign in{% endtrans %}</a></p>
+        <p><a href={{ url_for('blueprint.quiries') }}>{% trans %}Queries{% endtrans %}</a></p>
         <p><a href={{ url_for('blueprint.home_page') }}>{% trans %}Home Page{% endtrans %}</a> (accessible to anyone)
         </p>
         <p><a href={{ url_for('blueprint.member_page') }}>{% trans %}Member Page{% endtrans %}</a> (cashiers only)</p>

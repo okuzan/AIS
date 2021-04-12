@@ -2,41 +2,45 @@
 {% import 'bootstrap/wtf.html' as wtf %}
 
 {% block content %}
-    <div class="container">
-        <h3>{{ title }}</h3>
-        <hr>
-        {{ form.hidden_tag() }}
-        {{ wtf.form_field(form.employee) }}
-        {{ wtf.form_field(form.card) }}
-        <h4>Sales</h4>
-        <hr>
-        {% for sale in form.sales %}
-            <h5>Sale</h5>
-            {{ wtf.form_field(sale.upc_code) }}
-            {{ wtf.form_field(sale.check_number) }}
-            {{ wtf.form_field(sale.quantity) }}
+    <form action="" method="post">
+        <div class="container">
+            <h3>{{ title }}</h3>
+            <hr>
+            {{ form.hidden_tag() }}
+            {{ wtf.form_field(form.employee) }}
+            {{ wtf.form_field(form.card) }}
+            <br>
+            <h4>Sales</h4>
+            <hr>
+            <div id="sales">
+                {% for sale in form.sales %}
+                    <h4><strong>Sale {{ loop.index0  + 1}}</strong></h4>
+                    <br>
+                    {{ wtf.form_field(sale.upc_code) }}
+                    {{ wtf.form_field(sale.quantity) }}
+                    {{ wtf.form_field(sale.check_number) }}
+                    <div class="form-group  required">
+{#                        <label class="control-label" for="sales-+loop.index0+-upc_code">UPC: </label>#}
+                        <input class="form-control" id="sales-+loop.index0+-upc_code" name="sales-+loop.index+-upc_code"
+                               required
+                               type="hidden" value="">
+                    </div>
+                    <div class="form-group  required">
+{#                        <label class="control-label" for="sales-+loop.index+-quantity">Quantity: </label>#}
+                        <input class="form-control" id="sales-+loop.index0+-quantity" name="sales-+loop.index0+-quantity"
+                               required
+                               type="hidden" value="">
+                    </div>
+                                        <div class="form-group  required">
+{#                        <label class="control-label" for="sales-+loop.index+-quantity">Quantity: </label>#}
+                        <input class="form-control" id="sales-+loop.index0+-check_number" name="sales-+loop.index0+-quantity"
+                               required
+                               type="hidden" value="">
+                    </div>
 
-        {% endfor %}
-        {{ wtf.form_field(form.submit) }}
-    </div>
+                {% endfor %}
+            </div>
+            {{ wtf.form_field(form.submit) }}
+        </div>
+    </form>
 {% endblock %}
-{#{% block content %}#}
-{#    <div class="container">#}
-{#        <h3>{{ title }}</h3>#}
-{#        <hr>#}
-{#        {{ wtf.quick_form(form) }}#}
-{#        <hr>#}
-{#    </div>#}
-{#    <body>#}
-{#    <form method="POST" action="">#}
-{#        {{ form.hidden_tag() }}#}
-{#        {{ form.employee.label }} {{ form.employee }}#}
-{#        {{ form.card.label }} {{ form.card }}#}
-{#        <br/>#}
-{#        {% for nested in form.sales %}#}
-{#            {{ nested.label }}{{ nested }}#}
-{#        {% endfor %}#}
-{#        <button>Submit</button>#}
-{#    </form>#}
-{#    </body>#}
-{#{% endblock %}#}

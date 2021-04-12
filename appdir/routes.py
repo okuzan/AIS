@@ -676,7 +676,7 @@ def update_category(rowid):
 
 
 @blueprint.route('/<int:rowid>/update-cheque', methods=['get', 'post'])
-@roles_required('Cashier')  # Use of @roles_required decorator
+@roles_required(['Cashier', 'Manager'])  # Use of @roles_required decorator
 def update_cheque(rowid):
     con = sql.connect('dbs/zlagoda.db')
     cur = con.cursor()
@@ -687,8 +687,9 @@ def update_cheque(rowid):
                    WHERE CHECK_NUMBER = ?
                    ''', (row[0]))
     sales = cur.fetchall()
-
-    sale = namedtuple('Sale', ['upc_code',  'check_number', 'quantity'])
+    print("sales")
+    print(sales)
+    sale = namedtuple('Sale', ['upc_code', 'check_number', 'quantity'])
     sales_arr = [sale(i[0], i[1], i[2]) for i in sales]
     data = {
         # 'sales': [
@@ -703,7 +704,7 @@ def update_cheque(rowid):
 
     cur.execute('''SELECT ID_EMPLOYEE, EMPL_SURNAME, EMPL_NAME, EMPL_PATRONYMIC
                    FROM EMPLOYEE
-                   WHERE ROLE="manager"''')
+                   WHERE ROLE="cashier"''')
     result = cur.fetchall()
     empl_choices = [(i[0], "(" + str(i[0]) + ") " + i[1] + " " + i[2] + " " + i[3]) for i in result]
 
@@ -714,46 +715,81 @@ def update_cheque(rowid):
 
     # form.card.text = "!row[2]"
     form = CheckForm(data=data)
-    print(card_choices[1][1])
     form.employee.choices = empl_choices
-    form.card.choices = [("", "---")] + card_choices
-    form.card.data = form.card.choices[2][1]  # TODO default
-    form.card.default = form.card.choices[2]  # TODO default
-    # print(form.card.choices[2][1])
+    form.card.choices = card_choices + [("", "---")]
+    form.employee.data = row[1]  # TODO default
+    form.card.data = row[2]  # TODO default
 
-    if form.validate_on_submit():
+    if form.is_submitted():
         try:
-            print("HEJLRJJR")
             sales_data = []
-            for sale in request.form['sales']:
-                print(sale.quantity.data)
-                sales_data.append([sale.quantity.data, sale.upc.data])
+            for lp in range(len(sales)):
+                req_str1 = "sales-" + str(lp) + "-upc_code"
+                req_str2 = "sales-" + str(lp) + "-quantity"
+                req_str3 = "sales-" + str(lp) + "-check_number"
+                upc_code = request.form[req_str1]
+                print(upc_code)
+
+                quantity = request.form[req_str2]
+                print(quantity)
+
+                check_number = request.form[req_str3]
+                print(check_number)
+                print("this upc")
+                print(sales[lp][0])
                 cur.execute('''UPDATE SALE
-                 SET ID_EMPLOYEE = ?, CARD_NUMBER = ?,
-                 SUM_TOTAL = ?, VAT = ?
-                 WHERE UPC = ''', (
-                    request.form['employee'],
-                    request.form['card'],
-                    sale.upc.data
+                 SET UPC = ?, PRODUCT_NUMBER = ?
+                 WHERE UPC = ? AND CHECK_NUMBER = ?''', (
+                    upc_code, quantity, sales[lp][0], check_number
                 ))
                 con.commit()
+                cur.execute('''SELECT SELLING_PRICE
+                 FROM SALE
+                 WHERE UPC = ? AND CHECK_NUMBER = ?''', (
+                    sales[lp][0], check_number
+                ))
+                price = cur.fetchall()[0][0]
+                print("price")
+                print(price)
+                sale_data = [upc_code, check_number, quantity, price]
+                sales_data.append(sale_data)
+                con.commit()
 
-
-                #TODO
+            print("sales_data")
+            print(sales_data)
             sum_total = 0
-            vat = 0
-            # cur.execute('''UPDATE CHEQUE
-            #  SET ID_EMPLOYEE = ?, CARD_NUMBER = ?,
-            #  SUM_TOTAL = ?, VAT = ?
-            #  WHERE CHECK_NUMBER = (SELECT CHECK_NUMBER FROM CHEQUE LIMIT 1 OFFSET ?)''', (
-            #     request.form['employee'],
-            #     request.form['card'],
-            #     sum_total,
-            #     vat,
-            #     str(rowid - 1)))
-            # con.commit()
-            # cur.close()
-            # flash('Cheque was successfully updated', 'success')
+            cur.execute('''SELECT PERCENT 
+                         FROM CUSTOMER_CARD
+                         WHERE CARD_NUMBER=?''', (form.card.data,))
+            result = cur.fetchall()
+
+            percent = result[0][0]
+            print("percent")
+            print(percent)
+
+            for sale in sales_data:
+                sum_total += int(sale[2]) * int(sale[3])
+            if percent != 0:
+                sum_total = 0.01 * (100 - percent) * sum_total
+
+            sum_total = round(sum_total, 2)
+            vat = round(0.2 * sum_total / 1.2, 2)
+            print("vat")
+            print(vat)
+            print("sum_total")
+            print(sum_total)
+            cur.execute('''UPDATE CHEQUE
+             SET ID_EMPLOYEE = ?, CARD_NUMBER = ?,
+             SUM_TOTAL = ?, VAT = ?
+             WHERE CHECK_NUMBER = (SELECT CHECK_NUMBER FROM CHEQUE LIMIT 1 OFFSET ?)''', (
+                request.form['employee'],
+                request.form['card'],
+                sum_total,
+                vat,
+                str(rowid - 1)))
+            con.commit()
+            cur.close()
+            flash('Cheque was successfully updated', 'success')
             return redirect(url_for('blueprint.home_page'))
         except sql.Error as error:
             flash(error, 'danger')

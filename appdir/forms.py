@@ -196,10 +196,10 @@ class SaleForm(FlaskForm):
 
 
 class CheckForm(FlaskForm):
-    submit = SubmitField('Submit')
     employee = SelectField(u'Employee', coerce=str, validators=[DataRequired()])
     card = SelectField(u'Card', coerce=str)
     sales = FieldList(FormField(SaleForm), min_entries=1)
+    submit = SubmitField('Submit')
 
     # def __init__(self, *args, **kwargs):
     #     # def1 = kwargs.pop('def1')
